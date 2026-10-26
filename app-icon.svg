@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f6fed"/>
+      <stop offset="1" stop-color="#1b45a8"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <!-- Druckkopf -->
+  <rect x="352" y="210" width="320" height="150" rx="28" fill="#ffffff"/>
+  <path d="M462 360 h100 l-30 70 h-40 z" fill="#ffffff"/>
+  <!-- Schichten -->
+  <rect x="300" y="500" width="424" height="58" rx="16" fill="#ffb648"/>
+  <rect x="270" y="580" width="484" height="58" rx="16" fill="#ff9a1f"/>
+  <rect x="240" y="660" width="544" height="58" rx="16" fill="#ff8000"/>
+  <!-- Druckbett -->
+  <rect x="190" y="750" width="644" height="40" rx="14" fill="#ffffff" opacity="0.9"/>
+</svg>
