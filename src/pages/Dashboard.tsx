@@ -5,6 +5,7 @@ import { Badge, Empty } from "../components/ui";
 import { calcProject } from "../lib/calc";
 import { STATUS, isOpen, statusInfo } from "../lib/defaults";
 import { date, money, num } from "../lib/format";
+import { projectLabel } from "../lib/numbering";
 import { useStore } from "../lib/store";
 
 type Period = "12m" | "jahr" | "vorjahr" | "alle";
@@ -262,6 +263,7 @@ export default function Dashboard({ nav, onNew }: { nav: Nav; onNew: () => void 
           <table className="list">
             <thead>
               <tr>
+                <th>Nr.</th>
                 <th>Auftrag</th>
                 <th>Kunde</th>
                 <th>Status</th>
@@ -273,7 +275,8 @@ export default function Dashboard({ nav, onNew }: { nav: Nav; onNew: () => void 
             <tbody>
               {open.map(({ p, c }) => (
                 <tr key={p.id} onClick={() => nav({ page: "project", id: p.id })}>
-                  <td>{p.title || <i className="muted">Ohne Titel</i>}</td>
+                  <td className="nowrap num-col">{p.number}</td>
+                  <td>{projectLabel(p) || <i className="muted">Ohne Beschreibung</i>}</td>
                   <td>{customerName(p.customerId)}</td>
                   <td>
                     <Badge color={statusInfo(p.status).color}>{statusInfo(p.status).label}</Badge>

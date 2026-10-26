@@ -31,7 +31,7 @@ export default function App() {
   if (!store.ready) return <div className="loading">Lade Daten …</div>;
 
   const createProject = (customerId = "") => {
-    const p = newProject(store.settings, customerId);
+    const p = newProject(store.settings, customerId, store.projects.map((x) => x.number));
     store.saveProject(p);
     setView({ page: "project", id: p.id });
   };

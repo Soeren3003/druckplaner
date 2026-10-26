@@ -878,6 +878,16 @@ table.edit.fixed {
 .meta .row {
   flex-wrap: nowrap;
 }
+.meta .field.wide {
+  grid-column: span 3;
+}
+.title-input.custom {
+  font-style: italic;
+}
+.num-col {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
 
 .split {
   display: grid;

@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Customer, InvoiceRecord, Project, Settings } from "./types";
 import { date, fixed, money } from "./format";
+import { projectLabel } from "./numbering";
 
 const clean = (s: string) => s.replace(/[  ]/g, " ");
 
@@ -68,6 +69,8 @@ export function buildPdf(doc: InvoiceRecord, project: Project, customer: Custome
     [isInvoice ? "Rechnungsnr." : "Angebotsnr.", doc.number],
     ["Datum", date(doc.date)],
   ];
+  if (project.number) info.push(["Auftragsnr.", project.number]);
+  if (customer?.number) info.push(["Kundennr.", customer.number]);
   if (isInvoice && project.dueDate) info.push(["Lieferdatum", date(project.dueDate)]);
   if (!isInvoice) info.push(["Gültig bis", date(addDays(doc.date, 30))]);
   pdf.setFontSize(9.5);
@@ -85,10 +88,11 @@ export function buildPdf(doc: InvoiceRecord, project: Project, customer: Custome
   pdf.text(`${isInvoice ? "Rechnung" : "Angebot"} ${doc.number}`, L, y);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
-  if (project.title) {
+  const subject = projectLabel(project);
+  if (subject) {
     y += 6;
     gray();
-    pdf.text(`Projekt: ${project.title}`, L, y);
+    pdf.text(`Auftrag: ${subject}`, L, y);
     black();
   }
   y += 10;

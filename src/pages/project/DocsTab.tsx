@@ -5,6 +5,7 @@ import { calcProject, documentLines, documentTotals, nextNumber, vatRateFor, typ
 import { today, uid } from "../../lib/defaults";
 import { date, money, safeFileName } from "../../lib/format";
 import { buildPdf } from "../../lib/invoice";
+import { projectLabel } from "../../lib/numbering";
 import { useStore } from "../../lib/store";
 import type { InvoiceRecord, Project } from "../../lib/types";
 
@@ -34,7 +35,7 @@ export default function DocsTab({ project, update }: { project: Project; update:
       const lines = documentLines(project, settings, draft.detail);
       const totals = documentTotals(lines, vatRateFor(settings));
       const label = draft.kind === "rechnung" ? "Rechnung" : "Angebot";
-      const fileName = safeFileName(`${draft.number} ${label} ${customer?.name ?? ""} ${project.title}`) + ".pdf";
+      const fileName = safeFileName(`${draft.number} ${label} ${customer?.name ?? ""} ${projectLabel(project)}`) + ".pdf";
       const rec: InvoiceRecord = { id: uid(), kind: draft.kind, number: draft.number, date: draft.date, fileName, lines, ...totals, paidAt: "" };
       const pdf = buildPdf(rec, project, customer, settings, draft.note);
       await api.invoiceSave(fileName, pdf);

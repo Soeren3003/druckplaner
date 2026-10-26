@@ -72,6 +72,8 @@ export interface Customer {
   id: string;
   createdAt: string;
   updatedAt: string;
+  /** Kundennummer, z. B. „K-001“. */
+  number: string;
   name: string;
   company: string;
   street: string;
@@ -144,7 +146,13 @@ export interface Project {
   id: string;
   createdAt: string;
   updatedAt: string;
+  /** Auftragsnummer, z. B. „2026-001“. */
+  number: string;
+  /** Worum es geht, z. B. „20x Kabelhalter in PLA“. */
+  description: string;
+  /** Eigene Bezeichnung; nur genutzt, wenn `customTitle` gesetzt ist. */
   title: string;
+  customTitle: boolean;
   customerId: string;
   status: ProjectStatus;
   orderDate: string;

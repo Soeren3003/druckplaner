@@ -3,6 +3,7 @@ import type { Nav } from "../App";
 import { Field, Modal, NumberInput } from "../components/ui";
 import { calcProject } from "../lib/calc";
 import { STATUS, newCustomer } from "../lib/defaults";
+import { autoTitle, projectTitle } from "../lib/numbering";
 import { duration, fixed, money, num } from "../lib/format";
 import { useStore } from "../lib/store";
 import { confirmDialog } from "../lib/api";
@@ -30,18 +31,21 @@ export default function ProjectDetail({ id, nav }: { id: string; nav: Nav }) {
   }
 
   const update = (patch: Partial<Project>) => store.saveProject({ ...project, ...patch });
+  const customer = customers.find((c) => c.id === project.customerId);
+  const title = projectTitle(project, customer);
+  const numberTaken = store.projects.some((p) => p.id !== project.id && p.number && p.number === project.number);
   const cost = calcProject(project, settings);
   const cur = settings.currency;
 
   const remove = async () => {
-    if (!(await confirmDialog(`Auftrag „${project.title || "Ohne Titel"}“ mit allen Dateien und Rechnungs-PDFs löschen?`))) return;
+    if (!(await confirmDialog(`Auftrag „${title}“ mit allen Dateien und Rechnungs-PDFs löschen?`))) return;
     await store.deleteProject(project.id);
     nav({ page: "projects" });
   };
 
   const createCustomer = () => {
     if (!newCust?.trim()) return;
-    const c = { ...newCustomer(), name: newCust.trim() };
+    const c = { ...newCustomer(customers.map((x) => x.number)), name: newCust.trim() };
     store.saveCustomer(c);
     update({ customerId: c.id });
     setNewCust(null);
@@ -56,12 +60,19 @@ export default function ProjectDetail({ id, nav }: { id: string; nav: Nav }) {
           ←
         </button>
         <input
-          className="title-input"
-          value={project.title}
-          placeholder="Titel des Auftrags, z. B. 20× Kabelhalter in PLA"
-          onChange={(e) => update({ title: e.target.value })}
-          autoFocus={!project.title}
+          className={`title-input ${project.customTitle ? "custom" : ""}`}
+          value={title}
+          title={project.customTitle ? "Eigene Bezeichnung" : "Automatisch aus Auftragsnummer, Kunde und Beschreibung – zum Ändern einfach überschreiben"}
+          onChange={(e) =>
+            // Leeres Feld = zurück zur automatischen Bezeichnung
+            update(e.target.value.trim() ? { title: e.target.value, customTitle: true } : { title: "", customTitle: false })
+          }
         />
+        {project.customTitle && (
+          <button className="ghost small" title={`Automatisch: ${autoTitle(project, customer)}`} onClick={() => update({ title: "", customTitle: false })}>
+            ↺ Automatisch
+          </button>
+        )}
         <button className="danger ghost" onClick={remove}>
           Löschen
         </button>
@@ -103,6 +114,17 @@ export default function ProjectDetail({ id, nav }: { id: string; nav: Nav }) {
         </Field>
         <Field label="Liefertermin">
           <input type="date" value={project.dueDate} onChange={(e) => update({ dueDate: e.target.value })} />
+        </Field>
+        <Field label="Auftragsnummer" hint={numberTaken ? "Nummer ist bereits vergeben" : undefined}>
+          <input className={numberTaken ? "invalid" : ""} value={project.number} onChange={(e) => update({ number: e.target.value })} />
+        </Field>
+        <Field label="Beschreibung" wide>
+          <input
+            value={project.description}
+            placeholder="Worum geht es? z. B. 20× Kabelhalter in PLA"
+            onChange={(e) => update({ description: e.target.value })}
+            autoFocus={!project.description && !project.customTitle}
+          />
         </Field>
       </div>
 

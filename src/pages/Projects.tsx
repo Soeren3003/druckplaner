@@ -4,6 +4,7 @@ import { Badge, Empty } from "../components/ui";
 import { calcProject } from "../lib/calc";
 import { STATUS, isOpen, statusInfo } from "../lib/defaults";
 import { date, money } from "../lib/format";
+import { projectLabel } from "../lib/numbering";
 import { useStore } from "../lib/store";
 
 export default function Projects({ nav }: { nav: Nav }) {
@@ -15,8 +16,8 @@ export default function Projects({ nav }: { nav: Nav }) {
   const q = query.trim().toLowerCase();
   const list = projects
     .filter((p) => (filter === "alle" ? true : filter === "offen" ? isOpen(p) : p.status === filter))
-    .filter((p) => !q || `${p.title} ${customerName(p.customerId)} ${p.notes}`.toLowerCase().includes(q))
-    .sort((a, b) => b.orderDate.localeCompare(a.orderDate) || b.createdAt.localeCompare(a.createdAt));
+    .filter((p) => !q || `${p.number} ${p.description} ${p.title} ${customerName(p.customerId)} ${p.notes}`.toLowerCase().includes(q))
+    .sort((a, b) => b.orderDate.localeCompare(a.orderDate) || b.number.localeCompare(a.number));
 
   return (
     <div className="page">
@@ -42,6 +43,7 @@ export default function Projects({ nav }: { nav: Nav }) {
           <table className="list">
             <thead>
               <tr>
+                <th>Nr.</th>
                 <th>Datum</th>
                 <th>Auftrag</th>
                 <th>Kunde</th>
@@ -56,8 +58,9 @@ export default function Projects({ nav }: { nav: Nav }) {
                 const inv = p.invoices.filter((i) => i.kind === "rechnung").at(-1);
                 return (
                   <tr key={p.id} onClick={() => nav({ page: "project", id: p.id })}>
+                    <td className="nowrap num-col">{p.number}</td>
                     <td>{date(p.orderDate)}</td>
-                    <td>{p.title || <i className="muted">Ohne Titel</i>}</td>
+                    <td>{projectLabel(p) || <i className="muted">Ohne Beschreibung</i>}</td>
                     <td>{customerName(p.customerId) || "–"}</td>
                     <td>
                       <Badge color={s.color}>{s.label}</Badge>

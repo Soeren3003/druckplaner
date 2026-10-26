@@ -6,6 +6,7 @@ import { calcProject } from "../lib/calc";
 import { newCustomer, statusInfo } from "../lib/defaults";
 import { date, money } from "../lib/format";
 import { firstName } from "../lib/invoice";
+import { projectLabel } from "../lib/numbering";
 import { useStore } from "../lib/store";
 import type { Customer } from "../lib/types";
 
@@ -17,19 +18,20 @@ export default function Customers({ nav, selected, onNewProject }: { nav: Nav; s
 
   const q = query.trim().toLowerCase();
   const list = customers
-    .filter((c) => !q || `${c.name} ${c.company} ${c.city} ${c.email}`.toLowerCase().includes(q))
+    .filter((c) => !q || `${c.number} ${c.name} ${c.company} ${c.city} ${c.email}`.toLowerCase().includes(q))
     .sort((a, b) => a.name.localeCompare(b.name, "de"));
   const customer = customers.find((c) => c.id === current);
   const cur = settings.currency;
 
   const add = () => {
-    const c = newCustomer();
+    const c = newCustomer(customers.map((x) => x.number));
     store.saveCustomer(c);
     setCurrent(c.id);
   };
 
   const set = (patch: Partial<Customer>) => customer && store.saveCustomer({ ...customer, ...patch });
 
+  const numberTaken = !!customer && customers.some((c) => c.id !== customer.id && c.number && c.number === customer.number);
   const theirs = customer ? projects.filter((p) => p.customerId === customer.id).sort((a, b) => b.orderDate.localeCompare(a.orderDate)) : [];
 
   const remove = async () => {
@@ -67,7 +69,7 @@ export default function Customers({ nav, selected, onNewProject }: { nav: Nav; s
               {list.map((c) => (
                 <li key={c.id} className={c.id === current ? "active" : ""} onClick={() => setCurrent(c.id)}>
                   <strong>{c.name || <i className="muted">Ohne Namen</i>}</strong>
-                  <span className="muted small">{[c.company, c.city].filter(Boolean).join(" · ") || " "}</span>
+                  <span className="muted small">{[c.number, c.company, c.city].filter(Boolean).join(" · ") || " "}</span>
                 </li>
               ))}
             </ul>
@@ -77,7 +79,9 @@ export default function Customers({ nav, selected, onNewProject }: { nav: Nav; s
           <div className="detail">
             <section className="card">
               <div className="card-head">
-                <h2>{customer.name || "Neuer Kunde"}</h2>
+                <h2>
+                  {customer.name || "Neuer Kunde"} <span className="muted">{customer.number}</span>
+                </h2>
                 <button className="ghost small danger" onClick={remove}>
                   Löschen
                 </button>
@@ -85,6 +89,9 @@ export default function Customers({ nav, selected, onNewProject }: { nav: Nav; s
               <div className="form-grid">
                 <Field label="Name" hint="z. B. „Muster, Max“ oder „Max Muster“">
                   <input value={customer.name} onChange={(e) => set({ name: e.target.value })} autoFocus={!customer.name} />
+                </Field>
+                <Field label="Kundennummer" hint={numberTaken ? "Nummer ist bereits vergeben" : undefined}>
+                  <input className={numberTaken ? "invalid" : ""} value={customer.number} onChange={(e) => set({ number: e.target.value })} />
                 </Field>
                 <Field label="Firma (optional)">
                   <input value={customer.company} onChange={(e) => set({ company: e.target.value })} />
@@ -126,8 +133,9 @@ export default function Customers({ nav, selected, onNewProject }: { nav: Nav; s
                   <tbody>
                     {theirs.map((p) => (
                       <tr key={p.id} onClick={() => nav({ page: "project", id: p.id })}>
+                        <td className="nowrap num-col">{p.number}</td>
                         <td>{date(p.orderDate)}</td>
-                        <td>{p.title || <i className="muted">Ohne Titel</i>}</td>
+                        <td>{projectLabel(p) || <i className="muted">Ohne Beschreibung</i>}</td>
                         <td>
                           <Badge color={statusInfo(p.status).color}>{statusInfo(p.status).label}</Badge>
                         </td>

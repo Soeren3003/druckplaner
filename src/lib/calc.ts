@@ -1,3 +1,4 @@
+import { projectLabel } from "./numbering";
 import type { DocLine, PartLine, Project, Settings } from "./types";
 
 export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -101,7 +102,7 @@ export function documentLines(project: Project, settings: Settings, detail: Deta
   };
 
   if (detail === "pauschal") {
-    return [line(project.title || "3D-Druck", 1, "pauschal", cost.net)];
+    return [line(projectLabel(project) || "3D-Druck", 1, "pauschal", cost.net)];
   }
 
   const lines: DocLine[] = [];

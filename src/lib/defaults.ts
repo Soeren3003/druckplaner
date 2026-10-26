@@ -1,3 +1,4 @@
+import { nextCustomerNumber, nextProjectNumber } from "./numbering";
 import type { Customer, PartLine, Project, Settings, WorkLine } from "./types";
 
 export const uid = () => crypto.randomUUID();
@@ -81,9 +82,9 @@ export function migrateSettings(s: Partial<Settings>): Settings {
   } as Settings;
 }
 
-export function newCustomer(): Customer {
+export function newCustomer(existingNumbers: string[]): Customer {
   const t = now();
-  return { id: uid(), createdAt: t, updatedAt: t, name: "", company: "", street: "", zip: "", city: "", country: "", email: "", phone: "", notes: "" };
+  return { id: uid(), createdAt: t, updatedAt: t, number: nextCustomerNumber(existingNumbers), name: "", company: "", street: "", zip: "", city: "", country: "", email: "", phone: "", notes: "" };
 }
 
 export function newPart(settings: Settings): PartLine {
@@ -108,13 +109,16 @@ export function newWork(name = "", unit = "h", unitPrice = 0): WorkLine {
   return { id: uid(), name, quantity: 1, unit, unitPrice };
 }
 
-export function newProject(settings: Settings, customerId = ""): Project {
+export function newProject(settings: Settings, customerId = "", existingNumbers: string[] = []): Project {
   const t = now();
   return {
     id: uid(),
     createdAt: t,
     updatedAt: t,
+    number: nextProjectNumber(existingNumbers),
+    description: "",
     title: "",
+    customTitle: false,
     customerId,
     status: "anfrage",
     orderDate: today(),
@@ -131,7 +135,7 @@ export function newProject(settings: Settings, customerId = ""): Project {
 }
 
 export function migrateProject(p: Partial<Project>): Project {
-  const base: Partial<Project> = { invoices: [], work: [], parts: [], discount: 0, electricityPrice: null, notes: "", dueDate: "" };
+  const base: Partial<Project> = { invoices: [], work: [], parts: [], discount: 0, electricityPrice: null, notes: "", dueDate: "", number: "" };
   return { ...base, ...p } as Project;
 }
 

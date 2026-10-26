@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, type Collection } from "./api";
 import { defaultSettings, migrateProject, migrateSettings, now } from "./defaults";
+import { assignMissingNumbers } from "./numbering";
 import type { Customer, LocalConfig, Project, Settings, SyncReport } from "./types";
 
 type Entity = { id: string; updatedAt: string };
@@ -104,8 +105,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSettings(d);
       await api.dbPut("settings", d.id, d);
     }
-    setCustomers(c.sort((a, b) => a.name.localeCompare(b.name, "de")));
-    setProjects(p.map(migrateProject));
+    // Ältere Daten ohne Kunden-/Auftragsnummer einmalig umstellen.
+    const migrated = assignMissingNumbers(
+      c.map((x) => ({ ...x, number: x.number ?? "" })),
+      p.map(migrateProject),
+    );
+    for (const x of migrated.changedCustomers) await api.dbPut("customers", x.id, x);
+    for (const x of migrated.changedProjects) await api.dbPut("projects", x.id, x);
+    setCustomers(migrated.customers.sort((a, b) => a.name.localeCompare(b.name, "de")));
+    setProjects(migrated.projects);
   }, []);
 
   const runSync = useCallback(async () => {
