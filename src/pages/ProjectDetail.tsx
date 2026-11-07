@@ -14,11 +14,11 @@ import DocsTab from "./project/DocsTab";
 
 type Tab = "kalkulation" | "dateien" | "notizen" | "dokumente";
 
-export default function ProjectDetail({ id, nav }: { id: string; nav: Nav }) {
+export default function ProjectDetail({ id, nav, initialTab }: { id: string; nav: Nav; initialTab?: string }) {
   const store = useStore();
   const { settings, customers } = store;
   const project = store.projects.find((p) => p.id === id);
-  const [tab, setTab] = useState<Tab>("kalkulation");
+  const [tab, setTab] = useState<Tab>((initialTab as Tab) || "kalkulation");
   const [newCust, setNewCust] = useState<string | null>(null);
 
   if (!project) {

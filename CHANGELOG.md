@@ -49,7 +49,14 @@ Vor der Veröffentlichung geprüft und behoben:
   - `npm audit` und `cargo audit` ohne Befund
 - Build-Workflow nur mit Leserechten.
 
+### Dokumentation
+- Ausführliche README mit Screenshots (erfundene Beispieldaten), Rechenweg, Sync, Datenablage, Entwicklung,
+  Projektstruktur, Sicherheit, Hinweisen und bekannten Einschränkungen
+- Demo-Modus in der Browser-Vorschau (`?demo`) und Startansicht per URL, z. B. `?project=…&tab=…`
+- Release-Workflow: Ein Versions-Tag `v*` baut Installer für macOS, Windows und Linux und veröffentlicht sie als
+  GitHub-Release mit den Notizen aus diesem Änderungsprotokoll
+
 ### Datenschutz
 - Neue App-Kennung `de.soeren3003.druckplaner`. Ordner und Schlüsselbund-Eintrag einer früheren Kennung werden
   beim ersten Start automatisch übernommen.
-- Tests und Beispiele ohne echte Namen.
+- Tests, Beispiele und Screenshots ohne echte Namen oder Auftragsdaten.

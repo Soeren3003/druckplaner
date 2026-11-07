@@ -14,105 +14,265 @@
   <a href="#entstanden-mit-ki"><img src="https://img.shields.io/badge/entwickelt%20mit-Claude%20%28KI%29-d97757" alt="Entwickelt mit Claude (KI)"></a>
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/overview.jpg" alt="Übersicht mit Kennzahlen, Auftragswert pro Monat und Auswertungen" width="900">
+</p>
+
+<p align="center"><sub>Beispieldaten mit erfundenen Namen (Demo-Modus, siehe <a href="#entwicklung">Entwicklung</a>)</sub></p>
+
 ---
 
 ## Inhalt
 
 - [Worum geht es?](#worum-geht-es)
 - [Funktionen](#funktionen)
+- [Screenshots](#screenshots)
 - [Installation](#installation)
+- [Erste Schritte](#erste-schritte)
+- [So rechnet der Druckplaner](#so-rechnet-der-druckplaner)
 - [Gemeinsam nutzen mit Nextcloud](#gemeinsam-nutzen-mit-nextcloud)
 - [Wo liegen die Daten?](#wo-liegen-die-daten)
 - [Entwicklung](#entwicklung)
-- [Bauen](#bauen)
+- [Projektstruktur](#projektstruktur)
+- [Bauen und Veröffentlichen](#bauen-und-veröffentlichen)
 - [Sicherheit](#sicherheit)
 - [Hinweise zur Nutzung](#hinweise-zur-nutzung)
+- [Bekannte Einschränkungen](#bekannte-einschränkungen)
 - [Entstanden mit KI](#entstanden-mit-ki)
 - [Lizenz und Quellen](#lizenz-und-quellen)
 
 ## Worum geht es?
 
-Wer einen 3D-Drucker hat, bekommt schnell Anfragen aus dem Freundeskreis: „Kannst du mir das drucken?“ Damit der Preis
-fair ist und nichts verloren geht, ersetzt der Druckplaner eine Kalkulationstabelle: Filament, Strom, Arbeitszeit,
-Verpackung und Versand werden je Auftrag berechnet, Kunden und Druckdateien liegen an einem Ort, und Angebot und
-Rechnung entstehen auf Knopfdruck als PDF.
+Wer einen 3D-Drucker hat, bekommt schnell Anfragen aus dem Freundeskreis: „Kannst du mir das drucken?“ Meist geht
+es um kleine Beträge, und genau deshalb wird oft geschätzt statt gerechnet. Der Druckplaner ersetzt die
+Kalkulationstabelle, mit der das bisher lief:
+
+- **Fair rechnen:** Filament, Strom, Verschleiß, Arbeitszeit, Verpackung und Versand je Auftrag – nachvollziehbar
+  und mit denselben Formeln wie in der Tabelle.
+- **Nichts verlieren:** Kunden, Druckdateien, Notizen, Angebote und Rechnungen liegen an einem Ort.
+- **Den Überblick behalten:** Was ist offen, was ist bezahlt, wie viel Filament ging dieses Jahr durch den Drucker?
+- **Auf mehreren Rechnern:** Die Daten gleichen sich über die eigene Nextcloud ab, ohne Cloud-Dienst Dritter.
+
+Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhaltungs- oder Warenwirtschaftssystem.
 
 ## Funktionen
 
-- **Aufträge** mit Auftragsnummer (`2026-001`), Status (Anfrage → Angebot → Beauftragt → Im Druck → Fertig →
-  Geliefert → Bezahlt), Auftragsdatum und Liefertermin. Die Bezeichnung setzt sich automatisch aus Nummer, Kunde und
-  Beschreibung zusammen und lässt sich überschreiben.
-- **Kalkulation:**
-  - Filament: Rollenpreis ÷ Rolleninhalt × Gewicht × Anzahl, mit Filamentaufschlag
-  - Strom: Drucker-Watt × Druckzeit × Strompreis
-  - optional Verschleiß pro Druckstunde
-  - Arbeitspakete aus Vorlagen, Verpackung, Versand, Nachlass und Umsatzsteuer
-- **Kunden** mit Kundennummer (`K-001`), Adresse, Kontakt, Notizen und Auftragsübersicht.
-- **Druckdateien** je Auftrag (per Drag & Drop):
-  - Bei Bambu-/Orca-3MF-Dateien erscheint das Vorschaubild.
-  - Gesliced gespeicherte Dateien liefern Gewicht und Druckzeit je Platte; diese lassen sich als Druckteile übernehmen.
-- **Notizen** je Auftrag.
-- **Angebote und Rechnungen** als PDF:
-  - fortlaufende Nummer (`R2026-001`), Auftrags- und Kundennummer
-  - Steuerhinweis wahlweise Privatverkauf, Kleinunternehmer (§ 19 UStG) oder mit Umsatzsteuer
-- **Übersicht** mit Auftragswert pro Monat, Zusammensetzung der Kosten, Filament nach Material und Top-Kunden.
-- **Nextcloud-Sync** per WebDAV, automatisch oder auf Knopfdruck. Das App-Passwort liegt im Schlüsselbund des Systems.
+### Aufträge
+
+- Auftragsnummer je Jahr (`2026-001`, `2026-002` …), automatisch vergeben und änderbar
+- Status von *Anfrage* über *Angebot*, *Beauftragt*, *Im Druck*, *Fertig* und *Geliefert* bis *Bezahlt*
+  (oder *Storniert*)
+- Auftragsdatum, Liefertermin, Beschreibung und Notizen
+- **Bezeichnung automatisch** aus Nummer, Kunde und Beschreibung, z. B.
+  `2026-009 · Özdemir, Leyla – Dekofiguren Drache`. Wer eine eigene Bezeichnung möchte, überschreibt sie einfach
+  und kann jederzeit zur automatischen zurückkehren.
+- Suche über Nummer, Beschreibung, Kunde und Notizen; Filter nach Status
+
+### Kalkulation
+
+- **Druckteile** mit Anzahl, Filament, Farbe, Gewicht und Druckzeit pro Stück sowie Drucker
+- Rollenpreis, Rolleninhalt und Filamentaufschlag je Teil. Die Werte werden beim Auswählen des Filaments
+  übernommen, **spätere Preisänderungen verändern alte Aufträge nicht**.
+- **Strom** aus der Leistung des Druckers und der Druckzeit, Strompreis global oder je Auftrag
+- **Verschleiß** pro Druckstunde (optional, je Drucker)
+- **Arbeitspakete** frei oder aus Vorlagen (z. B. Konstruktion, Nacharbeiten, Reinigen)
+- Verpackung, Versand und Nachlass („Freundschaftspreis“)
+- Umsatzsteuer, wenn eingestellt
+- Zusammenfassung mit Gesamtpreis, Druckzeit und Filamentanteil, laufend aktualisiert
+
+### Druckdateien und 3MF
+
+- Dateien per **Drag & Drop** oder Dateidialog zum Auftrag hinzufügen (3MF, STL, STEP, SCAD, Bilder, PDF …)
+- Öffnen mit dem Standardprogramm, im Finder/Explorer zeigen, umbenennen, löschen
+- Bei **Bambu-Studio- und OrcaSlicer-3MF-Dateien** zeigt der Druckplaner das Vorschaubild an. Wurde die Datei nach
+  dem Slicen gespeichert, liest er **Gewicht und Druckzeit je Platte** aus und übernimmt sie auf Knopfdruck als
+  Druckteile.
+
+### Angebote und Rechnungen
+
+- **PDF auf Knopfdruck** mit Absender, Anschrift im Fensterbereich (DIN 5008), Rechnungs-, Auftrags- und
+  Kundennummer, Positionen, Summe und Zahlungshinweis
+- Fortlaufende Nummern: Rechnungen `R2026-001`, Angebote `A2026-001` (Präfix einstellbar)
+- Positionen einzeln (Druckteile, Arbeit, Verpackung, Versand) oder als eine Pauschale
+- Steuerhinweis wählbar: **Privatverkauf**, **Kleinunternehmer (§ 19 UStG)** oder **mit Umsatzsteuer**
+- Rechnungen als bezahlt markieren; das Datum fließt in die Übersicht ein
+- Texte für Einleitung, Grußformel und Hinweise in den Einstellungen anpassbar
+
+### Kunden
+
+- Kundennummer (`K-001` …), Name, Firma, Anschrift, E-Mail, Telefon und Notizen
+- Liste aller Aufträge des Kunden mit Status und Betrag, Summe der bezahlten Aufträge
+- Neuer Auftrag direkt aus der Kundenansicht
+
+### Übersicht
+
+- Kennzahlen: Auftragswert, bezahlt, offene Forderungen, gedrucktes Filament und Druckzeit
+- **Auftragswert pro Monat**, getrennt nach bezahlt und offen, auch als Tabelle
+- Zusammensetzung der Preise, Filament nach Material, Top-Kunden, offene Aufträge nach Status
+- Zeitraum wählbar: letzte 12 Monate, dieses Jahr, letztes Jahr, gesamt
+
+### Und außerdem
+
+- **Nextcloud-Sync** per WebDAV, beim Start, auf Knopfdruck oder in festen Abständen
+- Einstellungen für Absender, Steuer, Drucker, Strompreis, Filamente, Farben und Arbeitspakete
+- Hell- und Dunkelmodus nach Systemeinstellung
+- Alles auf Deutsch, Zahlen mit Komma, Druckzeiten als `1:35`, `1h 35m` oder `95m`
+
+## Screenshots
+
+| Auftrag mit Kalkulation | Angebote und Rechnungen |
+| --- | --- |
+| <img src="docs/screenshots/project.jpg" alt="Auftrag: Druckteile mit Filament, Gewicht, Druckzeit und Kosten, Zusammenfassung" width="440"> | <img src="docs/screenshots/documents.jpg" alt="Auftrag: Liste der Angebote und Rechnungen mit Bezahlt-Status" width="440"> |
+| **Aufträge** | **Kunden** |
+| <img src="docs/screenshots/projects.jpg" alt="Auftragsliste mit Nummer, Kunde, Status, Rechnung und Betrag" width="440"> | <img src="docs/screenshots/customers.jpg" alt="Kunden mit Kundennummer, Anschrift und Aufträgen" width="440"> |
+| **Einstellungen: Filamente** | **Rechnung als PDF** |
+| <img src="docs/screenshots/settings.jpg" alt="Einstellungen: Filamente mit Rollenpreis, Inhalt, Aufschlag und Preis pro kg" width="440"> | <img src="docs/screenshots/invoice.jpg" alt="Beispielrechnung als PDF" width="300"> |
+
+Personen, Firmen, Adressen, Aufträge und Beträge in den Bildern sind erfunden.
 
 ## Installation
 
-Fertige Pakete für macOS (`.dmg`), Windows (`.msi`/`.exe`) und Linux (`.deb`/`.AppImage`) entstehen über
-GitHub Actions (siehe [Bauen](#bauen)).
+### Fertige Pakete
 
-Die App ist nicht signiert. Beim ersten Start unter macOS: Rechtsklick auf die App → *Öffnen*. Bei einer
-heruntergeladenen App hilft alternativ:
+Die Installer stehen unter **[Releases](https://github.com/Soeren3003/druckplaner/releases/latest)**:
 
-```bash
-xattr -dr com.apple.quarantine /Applications/Druckplaner.app
-```
+| System | Datei |
+| --- | --- |
+| macOS (Apple Silicon und Intel) | `Druckplaner_x.y.z_universal.dmg` |
+| Windows | `Druckplaner_x.y.z_x64-setup.exe` oder `.msi` |
+| Linux Mint, Ubuntu, Debian | `Druckplaner_x.y.z_amd64.deb` |
+| andere Linux-Systeme | `Druckplaner_x.y.z_amd64.AppImage` |
+
+Die App ist **nicht signiert**. Darum gilt beim ersten Start:
+
+- **macOS:** Rechtsklick auf die App → *Öffnen*. Alternativ, wenn sie heruntergeladen wurde:
+  ```bash
+  xattr -dr com.apple.quarantine /Applications/Druckplaner.app
+  ```
+- **Windows:** Im SmartScreen-Hinweis *Weitere Informationen → Trotzdem ausführen* wählen.
+- **Linux:** `.deb` doppelklicken und installieren oder `sudo apt install ./Druckplaner_x.y.z_amd64.deb`.
+  Für das App-Passwort wird ein Schlüsselbund (GNOME Keyring bzw. KWallet) genutzt.
+
+### Selbst bauen
+
+Siehe [Entwicklung](#entwicklung) und [Bauen und Veröffentlichen](#bauen-und-veröffentlichen).
+
+## Erste Schritte
+
+1. **Einstellungen → Absender:** Name, Anschrift, E-Mail und Bankverbindung eintragen. Sie erscheinen auf Angeboten
+   und Rechnungen.
+2. **Einstellungen → Steuer & Rechnung:** Privatverkauf, Kleinunternehmer oder mit Umsatzsteuer wählen und die
+   Texte anpassen.
+3. **Einstellungen → Drucker & Strom:** Strompreis und die eigenen Drucker mit ihrer durchschnittlichen Leistung
+   beim Drucken eintragen (z. B. Bambu Lab A1 mini rund 150 W).
+4. **Einstellungen → Filamente:** Rollenpreise und gewünschten Aufschlag prüfen.
+5. **+ Neuer Auftrag:** Kunde wählen oder anlegen, Beschreibung eintragen, Druckteile mit Gewicht und Druckzeit aus
+   dem Slicer erfassen – oder die 3MF-Datei unter *Dateien* ablegen und die Werte übernehmen.
+6. Unter **Angebot & Rechnung** das PDF erzeugen. Ist die Rechnung bezahlt, Häkchen setzen – fertig.
+
+## So rechnet der Druckplaner
+
+Für jedes Druckteil gilt (Gewicht und Druckzeit pro Stück):
+
+| Anteil | Formel |
+| --- | --- |
+| Preis pro Gramm | Rollenpreis × (1 + Aufschlag) ÷ Rolleninhalt |
+| Filament | Preis pro Gramm × Gewicht × Anzahl |
+| Strom | Leistung des Druckers (kW) × Druckzeit (h) × Anzahl × Strompreis |
+| Verschleiß | Verschleiß pro Stunde × Druckzeit (h) × Anzahl |
+
+Dazu kommen Arbeitspakete (Anzahl × Preis), Verpackung und Versand, abzüglich Nachlass. Bei „mit Umsatzsteuer“
+wird der Steuersatz aufgeschlagen.
+
+**Beispiel** (aus dem Screenshot oben): 2 × „Drache groß“, je 64,70 g und 6:35 h, PLA zu 22,99 € je 1000-g-Rolle
+mit 10 % Aufschlag, Bambu Lab A1 mini mit 150 W, Strom 0,30 €/kWh, Verschleiß 0,10 €/h:
+
+- Preis pro Gramm: 22,99 € × 1,10 ÷ 1000 g = 0,0253 € → **Filament 3,27 €**
+- Druckzeit 2 × 6:35 h = 13,17 h → 0,15 kW × 13,17 h = 1,98 kWh → **Strom 0,59 €**
+- **Verschleiß** 0,10 €/h × 13,17 h = **1,32 €**
+- **Teil gesamt 5,18 €**
+
+Auf der Rechnung werden die Stückpreise auf volle Cent gerundet. Weicht die Summe dadurch um ein paar Cent von der
+Kalkulation ab, zeigt der Dialog das vor dem Erzeugen an.
 
 ## Gemeinsam nutzen mit Nextcloud
 
-1. In Nextcloud unter *Einstellungen → Sicherheit* ein **App-Passwort** erstellen.
-2. Im Druckplaner unter *Einstellungen → Daten & Sync* Folgendes eintragen und „Verbindung testen“ klicken:
-   - die Server-Adresse (`https://…`) oder die WebDAV-Adresse aus Nextcloud → Dateien → Einstellungen
-   - Benutzername und App-Passwort
-   - den Ordner auf dem Server (Standard `Druckplaner`)
-3. Auf weiteren Rechnern genauso einrichten.
+Der Druckplaner kann seinen Datenordner mit einem Ordner in der eigenen Nextcloud (oder einem anderen
+WebDAV-Server) abgleichen. So sind Aufträge, Kunden, Dateien und Rechnungen auf mehreren Rechnern gleich.
 
-Ändern zwei Geräte denselben Datensatz, gewinnt der neuere Stand. Der andere bleibt im Ordner `conflicts/` erhalten.
-Ist eine Seite komplett leer (neuer Rechner, neuer Server-Ordner), wird nichts gelöscht, sondern alles übernommen.
-Verbindungen laufen nur über HTTPS.
+1. In Nextcloud unter *Einstellungen → Sicherheit* ein **App-Passwort** erstellen (nicht das normale Passwort
+   verwenden).
+2. Im Druckplaner unter *Einstellungen → Daten & Sync* eintragen:
+   - **Server-Adresse:** `https://cloud.example.com` oder die WebDAV-Adresse aus *Nextcloud → Dateien →
+     Einstellungen*
+   - **Benutzername** und **App-Passwort**
+   - **Ordner auf dem Server** (Standard `Druckplaner`, wird angelegt, falls nicht vorhanden)
+   - **Automatisch synchronisieren:** nur beim Start, alle 5 oder 15 Minuten oder stündlich
+3. *Verbindung testen*, dann *Synchronisation aktivieren* und speichern.
+4. Auf weiteren Rechnern genauso einrichten.
+
+So funktioniert der Abgleich:
+
+- Für jede Datei merkt sich der Druckplaner, wie sie beim letzten Abgleich aussah. Daran erkennt er, auf welcher
+  Seite sich etwas geändert hat, und überträgt nur das.
+- Gelöschte Aufträge und Dateien werden auch auf der anderen Seite gelöscht.
+- **Konflikte:** Wurde derselbe Datensatz auf zwei Geräten geändert, gewinnt der neuere Stand. Der andere bleibt im
+  Ordner `conflicts/` erhalten.
+- Ist eine Seite **komplett leer** (neuer Rechner, neuer Server-Ordner), wird nichts gelöscht, sondern alles
+  übernommen.
+- Verbindungen laufen nur über **HTTPS**. Das App-Passwort liegt im Schlüsselbund des Systems und wird nie
+  synchronisiert.
+
+Der Ordner muss **nicht** im Nextcloud-Client liegen. Liegt der Datenordner trotzdem in einem vom Client
+synchronisierten Ordner, sollte der eingebaute Sync ausgeschaltet bleiben.
 
 ## Wo liegen die Daten?
 
-Alles liegt als einfache Dateien im Datenordner (Standard unter macOS:
-`~/Library/Application Support/de.soeren3003.druckplaner/data`):
+Alles liegt als einfache Dateien im Datenordner:
+
+| System | Standardordner |
+| --- | --- |
+| macOS | `~/Library/Application Support/de.soeren3003.druckplaner/data` |
+| Windows | `%APPDATA%\de.soeren3003.druckplaner\data` |
+| Linux | `~/.local/share/de.soeren3003.druckplaner/data` |
 
 ```
 db/customers/<id>.json      Kunden
-db/projects/<id>.json       Aufträge
-db/settings/settings.json   Einstellungen (Absender, Filamente, Drucker …)
+db/projects/<id>.json       Aufträge (mit Kalkulation und Liste der Angebote/Rechnungen)
+db/settings/settings.json   Einstellungen (Absender, Steuer, Drucker, Filamente …)
 files/<auftrag-id>/…        Druckdateien und Anhänge
-invoices/*.pdf              Angebote und Rechnungen
+invoices/*.pdf              erzeugte Angebote und Rechnungen
 conflicts/                  (nur lokal) ältere Version bei Sync-Konflikten
+.sync-state.json            (nur lokal) Stand des letzten Abgleichs
 ```
 
-Der Datenordner lässt sich in den Einstellungen ändern. Zugangsdaten werden nie synchronisiert.
+Daneben liegt die lokale `config.json` mit Datenordner und Sync-Einstellungen, aber ohne Passwort. Der
+Datenordner lässt sich in den Einstellungen ändern, *Öffnen* zeigt ihn im Finder bzw. Explorer.
+
+Zum **Sichern** genügt eine Kopie des Datenordners.
 
 ## Entwicklung
 
-Voraussetzungen: [Node.js](https://nodejs.org) und [Rust](https://rustup.rs), unter macOS z. B. `brew install node rust`.
+Voraussetzungen: [Node.js](https://nodejs.org) (22 oder neuer) und [Rust](https://rustup.rs), unter macOS
+z. B. `brew install node rust`. Unter Linux zusätzlich die
+[Tauri-Abhängigkeiten](https://tauri.app/start/prerequisites/) (WebKitGTK, libdbus).
 
 ```bash
 npm install
 npm run tauri dev      # App mit Hot-Reload starten
-npm test               # Tests der Oberfläche (Kalkulation, Nummern)
+npm test               # Tests der Oberfläche (Kalkulation, Nummern, Eingaben)
 cd src-tauri && cargo test
 ```
 
-`npm run dev` startet nur die Oberfläche im Browser. Die Daten liegen dann im Browser-Speicher.
+**Browser-Vorschau und Demo-Modus:** `npm run dev` startet nur die Oberfläche unter `http://localhost:1420`. Die Daten
+liegen dann im Speicher des Browsers, Dateien und Sync stehen nicht zur Verfügung.
 
-Sync-Integrationstest gegen einen lokalen WebDAV-Server:
+- `http://localhost:1420/?demo` lädt **erfundene Beispieldaten** (`src/lib/demo.ts`). Damit sind auch die
+  Screenshots entstanden.
+- Startansicht per URL, z. B. `?project=proj-10&tab=kalkulation`, `?page=customers&id=cust-5` oder
+  `?page=settings&tab=filamente`
+
+**Sync-Integrationstest** gegen einen lokalen WebDAV-Server:
 
 ```bash
 pip install wsgidav cheroot
@@ -128,28 +288,82 @@ npm run licenses              # THIRD_PARTY_LICENSES.md und Lizenzliste der App 
 npm run set-version -- 1.1.0  # Versionsnummer überall setzen
 ```
 
-## Bauen
+## Projektstruktur
 
-```bash
-npm run tauri build    # macOS: .app und .dmg unter src-tauri/target/release/bundle/
+```
+src/                          Oberfläche (React + TypeScript)
+  App.tsx                     Rahmen, Navigation, Seitenleiste
+  pages/                      Übersicht, Aufträge, Auftrag (Kalkulation, Dateien, Dokumente), Kunden, Einstellungen
+  components/                 Diagramme, Eingabefelder, Dialoge, „Über Druckplaner“, Lizenzliste
+  lib/calc.ts                 Kalkulation und Rechnungspositionen
+  lib/numbering.ts            Kunden- und Auftragsnummern, automatische Bezeichnung
+  lib/invoice.ts              PDF für Angebote und Rechnungen (jsPDF)
+  lib/store.tsx               Daten laden, speichern, synchronisieren
+  lib/api.ts                  Brücke zur Desktop-Hülle (im Browser: Ersatz mit localStorage)
+  lib/demo.ts                 erfundene Beispieldaten
+src-tauri/                    Desktop-Hülle (Rust, Tauri 2)
+  src/lib.rs                  Befehle für die Oberfläche
+  src/store.rs                Ablage im Datenordner, Prüfung von Kennungen und Dateinamen
+  src/sync.rs                 Zwei-Wege-Abgleich mit Konfliktbehandlung
+  src/webdav.rs               WebDAV-Client
+  src/threemf.rs              Vorschaubild, Gewicht und Druckzeit aus 3MF-Dateien
+  src/config.rs               lokale Einstellungen und Schlüsselbund
+  src/migrate.rs              Übernahme der Daten nach einer Änderung der App-Kennung
+  tests/sync_dav.rs           Sync-Integrationstest
+scripts/                      Lizenzliste, Versionsnummer
+docs/screenshots/             Bilder für diese README
 ```
 
-Windows- und Linux-Pakete müssen auf dem jeweiligen System gebaut werden. Am einfachsten geht das über GitHub Actions:
-Workflow *Build* manuell starten oder einen Tag `v*` pushen. Die Installer liegen danach als Artefakte am Workflow-Lauf.
+## Bauen und Veröffentlichen
 
-Die Versionsnummern folgen der [semantischen Versionierung](https://semver.org/lang/de/), Änderungen stehen im
-[CHANGELOG.md](CHANGELOG.md).
+### Lokal (macOS)
+
+```bash
+npm run tauri build
+```
+
+Die App liegt danach unter `src-tauri/target/release/bundle/macos/Druckplaner.app`, das Installationsabbild unter
+`src-tauri/target/release/bundle/dmg/`. Zum Installieren die App nach *Programme* ziehen.
+
+### Über GitHub Actions
+
+Der Workflow `.github/workflows/build.yml` führt die Tests aus und baut alle drei Plattformen:
+
+- **Release:** Ein Versions-Tag erzeugt automatisch ein GitHub-Release. Die Notizen stammen aus dem CHANGELOG,
+  die Installer für macOS, Windows und Linux werden angehängt. Das Release wird erst sichtbar, wenn alle
+  Builds fertig sind.
+  ```bash
+  git tag -a v1.0.0 -m "Version 1.0.0"
+  git push <remote> v1.0.0
+  ```
+  Das Tag muss zur Versionsnummer in `package.json` passen, sonst bricht der Workflow ab.
+- **Nur bauen:** manuell unter *Actions → Build → Run workflow*. Die Installer hängen dann als Artefakte am Lauf.
+
+### Versionen
+
+Die Versionsnummern folgen der [semantischen Versionierung](https://semver.org/lang/de/) (`MAJOR.MINOR.PATCH`).
+Was sich in welcher Version geändert hat, steht im [CHANGELOG.md](CHANGELOG.md).
+
+So entsteht eine neue Version:
+
+```bash
+npm run set-version -- 1.1.0     # setzt die Nummer in package.json, Cargo.toml, tauri.conf.json und den Lockfiles
+# CHANGELOG.md ergänzen, dann:
+git commit -am "Version 1.1.0"
+git tag -a v1.1.0 -m "Version 1.1.0"
+```
 
 ## Sicherheit
 
 Das Sicherheitskonzept und der Weg zum Melden von Lücken stehen in **[SECURITY.md](SECURITY.md)**. Kurz gesagt:
 
-- **Zugangsdaten nur lokal:** Es gibt keine Zugangsdaten im Repository. Das Nextcloud-App-Passwort liegt im Schlüsselbund.
-- **Abgeschottete Oberfläche:** Eine strikte Content-Security-Policy gilt, und fremde Daten werden nie als HTML eingesetzt.
-- **Geprüfte Befehle:**
-  - Was die Oberfläche anstoßen kann, ist eng begrenzt (Dateinamen, Dateitypen, Links).
-  - Programme und Skripte werden nicht direkt geöffnet.
-  - Sync-Pfade können den Datenordner nicht verlassen.
+- **Zugangsdaten nur lokal:** Es gibt keine Zugangsdaten im Repository. Das Nextcloud-App-Passwort liegt im
+  Schlüsselbund.
+- **Abgeschottete Oberfläche:** Eine strikte Content-Security-Policy gilt, und fremde Daten werden nie als HTML
+  eingesetzt.
+- **Geprüfte Befehle:** Was die Oberfläche anstoßen kann, ist eng begrenzt (Dateinamen, Dateitypen, Links).
+  Programme und Skripte werden nicht direkt geöffnet, Sync-Pfade können den Datenordner nicht verlassen.
+- **3MF-Dateien** werden nur gelesen, nie entpackt, und nur bis zu einer Höchstgröße.
 - **Abhängigkeiten ohne bekannte Lücken** (`npm audit`, `cargo audit`):
 
 ```bash
@@ -163,11 +377,24 @@ Tauri-Updates behoben.
 
 ## Hinweise zur Nutzung
 
-- Die Kalkulation ist eine Hilfe für faire Preise, keine Buchhaltung.
-- Die Rechnungsvorlagen ersetzen keine steuerliche Beratung. Ob du privat verkaufen darfst, Kleinunternehmer bist oder
-  Umsatzsteuer ausweisen musst, hängt von deiner Situation ab.
-- Kundendaten sind personenbezogene Daten. Speichere nur, was du für den Auftrag brauchst, und synchronisiere nur
+- Die Kalkulation ist eine Hilfe für faire Preise, **keine Buchhaltung**. Einnahmen bitte zusätzlich so
+  aufbewahren, wie es für dich vorgeschrieben ist.
+- Die Rechnungsvorlagen ersetzen **keine steuerliche Beratung**. Ob du privat verkaufen darfst, Kleinunternehmer bist
+  oder Umsatzsteuer ausweisen musst, hängt von deiner Situation ab.
+- Kundendaten sind **personenbezogene Daten**. Speichere nur, was du für den Auftrag brauchst, und synchronisiere nur
   mit einem Server, dem du vertraust.
+- Wer Druckvorlagen aus dem Internet verwendet, sollte deren Lizenz beachten: Manche Modelle dürfen nicht
+  kommerziell gedruckt werden.
+
+## Bekannte Einschränkungen
+
+- Die App ist nicht signiert (siehe [Installation](#installation)).
+- Es gibt keine **E-Rechnung** (XRechnung/ZUGFeRD), nur PDF.
+- Werden auf zwei Geräten gleichzeitig Aufträge angelegt, kann eine Nummer doppelt vergeben werden. Die App
+  markiert das, die Nummer lässt sich ändern.
+- Gewicht und Druckzeit lassen sich nur aus 3MF-Dateien von Bambu Studio und OrcaSlicer lesen, und nur, wenn die
+  Datei nach dem Slicen gespeichert wurde. Aus STL-Dateien werden keine Werte gelesen.
+- Ein eigenes Logo auf Rechnungen ist noch nicht möglich.
 
 ## Entstanden mit KI
 
@@ -177,13 +404,13 @@ Genutzt wurde dafür [Claude Code](https://claude.com/claude-code).
 Die Aufgaben waren so verteilt:
 
 - **Mensch (Soeren3003):**
-  - Idee und Anforderungen aus der Praxis, mit der eigenen Kalkulationstabelle als Vorlage
-  - Entscheidungen über Funktionen, Aufbau, Lizenz und Veröffentlichung
+  - Idee und Anforderungen aus der Praxis, mit der eigenen Kalkulationstabelle für 3D-Druckaufträge als Vorlage
+  - Entscheidungen über Funktionen, Aufbau, Nummernformate, Lizenz und Veröffentlichung
   - Prüfen und Ausprobieren der Ergebnisse
 - **KI (Claude):**
   - Entwurf der Architektur
   - der Großteil des Quellcodes, der Tests und dieser Dokumentation
-  - Vorschläge für zusätzliche Funktionen, z. B. 3MF-Auswertung, Übersicht mit Diagrammen und Nummernkreise
+  - Vorschläge für zusätzliche Funktionen (z. B. 3MF-Auswertung, Übersicht mit Diagrammen, Verschleißkosten)
 
 Commits, an denen die KI mitgearbeitet hat, sind in der Versionsgeschichte mit `Co-Authored-By: Claude …`
 gekennzeichnet.
@@ -209,10 +436,14 @@ für die Desktop-Hülle. Alle stehen unter freien Lizenzen, die mit der MIT-Lize
 Bei Wahlmöglichkeit wird MIT genutzt. Alle Lizenztexte stehen in **[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)**
 und in der App unter *Über Druckplaner → Lizenzen aller Komponenten*.
 
-Die wichtigsten Komponenten sind:
-- [Tauri](https://tauri.app/) (Desktop-Hülle)
-- [React](https://react.dev/) (Oberfläche)
-- [jsPDF](https://github.com/parallax/jsPDF) mit AutoTable (PDF)
-- [reqwest](https://github.com/seanmonstar/reqwest) mit rustls (HTTPS)
-- [quick-xml](https://github.com/tafia/quick-xml) und [zip](https://github.com/zip-rs/zip2) (WebDAV, 3MF)
-- [keyring](https://github.com/hwchen/keyring-rs) (Schlüsselbund)
+Die wichtigsten Komponenten:
+
+| Komponente | Zweck | Lizenz |
+| --- | --- | --- |
+| [Tauri](https://tauri.app/) | Desktop-Hülle für macOS, Windows und Linux | MIT / Apache-2.0 |
+| [React](https://react.dev/) | Oberfläche | MIT |
+| [jsPDF](https://github.com/parallax/jsPDF) und [AutoTable](https://github.com/simonbengtsson/jsPDF-AutoTable) | Angebote und Rechnungen als PDF | MIT |
+| [reqwest](https://github.com/seanmonstar/reqwest) mit [rustls](https://github.com/rustls/rustls) | verschlüsselte WebDAV-Verbindung | MIT / Apache-2.0 |
+| [quick-xml](https://github.com/tafia/quick-xml) | WebDAV-Antworten, 3MF-Metadaten | MIT |
+| [zip](https://github.com/zip-rs/zip2) | Lesen von 3MF-Dateien | MIT |
+| [keyring](https://github.com/hwchen/keyring-rs) | App-Passwort im Schlüsselbund | MIT / Apache-2.0 |

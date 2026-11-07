@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AboutDialog, APP_VERSION } from "./components/About";
+import { inTauri } from "./lib/api";
 import { useStore } from "./lib/store";
 import { newProject } from "./lib/defaults";
 import { dateTime } from "./lib/format";
@@ -12,11 +13,22 @@ import SettingsPage from "./pages/Settings";
 export type View =
   | { page: "dashboard" }
   | { page: "projects" }
-  | { page: "project"; id: string }
+  | { page: "project"; id: string; tab?: string }
   | { page: "customers"; id?: string }
   | { page: "settings"; tab?: string };
 
 export type Nav = (v: View) => void;
+
+/** Browser-Vorschau: Startansicht per URL, z. B. ?project=proj-10&tab=kalkulation (für Screenshots) */
+function initialView(): View {
+  if (inTauri) return { page: "dashboard" };
+  const p = new URLSearchParams(location.search);
+  const project = p.get("project");
+  if (project) return { page: "project", id: project, tab: p.get("tab") || undefined };
+  const page = p.get("page");
+  if (page === "customers") return { page, id: p.get("id") || undefined };
+  return page && ["dashboard", "projects", "settings"].includes(page) ? ({ page, tab: p.get("tab") || undefined } as View) : { page: "dashboard" };
+}
 
 const NAV: { page: View["page"]; label: string; icon: string }[] = [
   { page: "dashboard", label: "Übersicht", icon: "◧" },
@@ -27,7 +39,7 @@ const NAV: { page: View["page"]; label: string; icon: string }[] = [
 
 export default function App() {
   const store = useStore();
-  const [view, setView] = useState<View>({ page: "dashboard" });
+  const [view, setView] = useState<View>(initialView);
   const [about, setAbout] = useState(false);
 
   if (!store.ready) return <div className="loading">Lade Daten …</div>;
@@ -94,7 +106,7 @@ export default function App() {
         )}
         {view.page === "dashboard" && <Dashboard nav={setView} onNew={createProject} />}
         {view.page === "projects" && <Projects nav={setView} />}
-        {view.page === "project" && <ProjectDetail id={view.id} nav={setView} />}
+        {view.page === "project" && <ProjectDetail id={view.id} nav={setView} initialTab={view.tab} />}
         {view.page === "customers" && <Customers nav={setView} selected={view.id} onNewProject={createProject} />}
         {view.page === "settings" && <SettingsPage tab={view.tab} />}
       </main>

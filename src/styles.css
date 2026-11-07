@@ -689,7 +689,7 @@ table.edit.fixed {
 .dash-grid .card {
   margin-bottom: 16px;
 }
-.card-head .muted.small {
+.card-head > div > .muted.small {
   display: block;
   margin-top: 2px;
 }
