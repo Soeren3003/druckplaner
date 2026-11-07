@@ -148,6 +148,18 @@ pub fn files_import(data: &Path, project_id: &str, sources: &[String]) -> Result
     Ok(out)
 }
 
+/// Dateien, die beim Öffnen Code ausführen würden (Programme, Skripte, Installer, Verknüpfungen).
+pub fn is_executable_name(name: &str) -> bool {
+    const RISKY: &[&str] = &[
+        "app", "command", "tool", "sh", "bash", "zsh", "csh", "fish", "exe", "msi", "msix", "bat", "cmd", "com", "ps1", "psm1", "vbs", "vbe", "js", "jse",
+        "wsf", "wsh", "hta", "jar", "scr", "cpl", "msc", "reg", "lnk", "url", "webloc", "inetloc", "pkg", "mpkg", "dmg", "iso", "deb", "rpm", "appimage",
+        "desktop", "workflow", "scpt", "applescript", "terminal", "py", "pyw", "pl", "rb", "php", "action", "run", "bin", "elf", "dylib", "so", "dll",
+    ];
+    let lower = name.to_lowercase();
+    // auch „rechnung.pdf.exe“ und versteckte Endungen erkennen
+    lower.rsplit('.').next().is_some_and(|ext| lower.contains('.') && RISKY.contains(&ext))
+}
+
 pub fn invoice_path(data: &Path, name: &str) -> Result<PathBuf, String> {
     check_file_name(name)?;
     Ok(data.join("invoices").join(name))
@@ -157,4 +169,29 @@ pub fn invoice_save(data: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf, St
     let path = invoice_path(data, name)?;
     write_atomic(&path, bytes)?;
     Ok(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detects_executables() {
+        for n in ["Setup.EXE", "rechnung.pdf.exe", "start.command", "x.app", "a.sh", "Link.lnk"] {
+            assert!(is_executable_name(n), "{n}");
+        }
+        for n in ["Teil.3mf", "Halter.stl", "Gehaeuse.step", "Foto.jpeg", "Rechnung.pdf", "modell.scad", "README"] {
+            assert!(!is_executable_name(n), "{n}");
+        }
+    }
+
+    #[test]
+    fn rejects_bad_ids_and_names() {
+        assert!(check_id("abc_123-x").is_ok());
+        assert!(check_id("../x").is_err());
+        assert!(check_file_name("..").is_err());
+        assert!(check_file_name("a/b").is_err());
+        assert!(check_file_name("a\\b").is_err());
+        assert!(check_file_name(".versteckt").is_err());
+    }
 }

@@ -36,6 +36,8 @@ export const api = {
   invoiceExport: (name: string, target: string) => call<void>("invoice_export", { name, target }),
   invoiceDelete: (name: string) => call<void>("invoice_delete", { name }),
   openDataDir: () => call<void>("open_data_dir"),
+  /** Öffnet http(s)-Links im Standardbrowser (nicht im App-Fenster). */
+  openUrl: (url: string) => (inTauri ? call<void>("open_url", { url }) : Promise.resolve(void window.open(url, "_blank", "noopener"))),
 };
 
 export async function pickFiles(): Promise<string[]> {

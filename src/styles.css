@@ -1076,6 +1076,101 @@ table.edit.fixed {
   background: var(--accent-soft);
 }
 
+/* ---------- Über Druckplaner & Lizenzen ---------- */
+
+.about-link {
+  text-align: left;
+  padding: 0 6px;
+  color: var(--muted);
+}
+.about h3 {
+  font-size: 13px;
+  margin: 16px 0 6px;
+}
+.about p {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+.about-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.logo.big {
+  width: 52px;
+  height: 52px;
+  font-size: 30px;
+  border-radius: 12px;
+}
+.about-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+.kv-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.kv-list dt {
+  color: var(--muted);
+}
+.kv-list dd {
+  margin: 0;
+}
+.about-facts {
+  max-width: 340px;
+}
+.license-text {
+  white-space: pre-wrap;
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 220px;
+  overflow: auto;
+}
+ul.plain {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.credits .link {
+  padding: 0;
+}
+.search.full {
+  width: 100%;
+  margin: 6px 0 8px;
+}
+.row.between {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+.third-party {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 52vh;
+  overflow: auto;
+}
+.third-party li {
+  border-bottom: 1px solid var(--border);
+  padding: 4px 0;
+}
+.third-party .link {
+  padding: 0;
+  text-align: left;
+}
+.tp-detail {
+  padding: 4px 0 6px 16px;
+}
+
 /* ---------- Dialog ---------- */
 
 .modal-backdrop {

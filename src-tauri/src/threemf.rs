@@ -42,10 +42,16 @@ pub struct ThreeMfInfo {
     pub filaments: Vec<FilamentInfo>,
 }
 
+/// Höchstgröße eines gelesenen Eintrags – schützt vor präparierten Archiven („ZIP-Bombe“).
+const MAX_ENTRY: u64 = 16 * 1024 * 1024;
+
 fn read_entry(zip: &mut ZipArchive<File>, name: &str) -> Option<Vec<u8>> {
-    let mut f = zip.by_name(name).ok()?;
+    let f = zip.by_name(name).ok()?;
+    if f.size() > MAX_ENTRY {
+        return None;
+    }
     let mut buf = Vec::new();
-    f.read_to_end(&mut buf).ok()?;
+    f.take(MAX_ENTRY).read_to_end(&mut buf).ok()?;
     Some(buf)
 }
 
@@ -53,7 +59,7 @@ fn attr(e: &BytesStart, key: &str) -> Option<String> {
     e.attributes()
         .flatten()
         .find(|a| a.key.local_name().as_ref() == key.as_bytes())
-        .and_then(|a| a.unescape_value().ok().map(|v| v.into_owned()))
+        .and_then(|a| a.normalized_value(quick_xml::XmlVersion::default()).ok().map(|v| v.into_owned()))
 }
 
 fn num(s: Option<String>) -> f64 {

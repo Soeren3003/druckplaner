@@ -57,6 +57,18 @@ fn url_path(url: &str) -> String {
     percent_decode_str(path).decode_utf8_lossy().into_owned()
 }
 
+/// http ist nur für den eigenen Rechner erlaubt (lokaler Testserver).
+fn is_local(url: &str) -> bool {
+    let rest = url.split_once("://").map(|(_, r)| r).unwrap_or(url);
+    let authority = rest.split('/').next().unwrap_or("");
+    let host = if authority.starts_with('[') {
+        authority.split(']').next().map(|h| format!("{h}]")).unwrap_or_default()
+    } else {
+        authority.split(':').next().unwrap_or("").to_string()
+    };
+    matches!(host.as_str(), "localhost" | "127.0.0.1" | "[::1]")
+}
+
 fn clean_etag(s: &str) -> String {
     s.trim().trim_start_matches("W/").trim_matches('"').to_string()
 }
@@ -72,6 +84,9 @@ impl Dav {
         }
         if !root.starts_with("http://") && !root.starts_with("https://") {
             root = format!("https://{root}");
+        }
+        if root.starts_with("http://") && !is_local(&root) {
+            return Err("Bitte eine https-Adresse verwenden – über http würde das Passwort unverschlüsselt übertragen.".into());
         }
         if !root.contains("/remote.php/") {
             root = format!("{root}/remote.php/dav/files/{}", encode(user.trim()));
@@ -268,17 +283,30 @@ fn parse_multistatus(xml: &str) -> Result<Vec<(String, bool, String)>, String> {
                     }
                 }
                 b"resourcetype" => in_rt = false,
-                b"href" | b"getetag" => field = None,
+                b"href" | b"getetag" => {
+                    if let Some(c) = cur.as_mut() {
+                        c.0 = c.0.trim().to_string();
+                        c.2 = c.2.trim().to_string();
+                    }
+                    field = None
+                }
                 _ => {}
             },
             Ok(Event::Text(t)) => {
                 if let (Some(f), Some(c)) = (field, cur.as_mut()) {
-                    let s = t.unescape().map_err(|e| e.to_string())?;
-                    if f == 0 {
-                        c.0.push_str(s.trim());
-                    } else {
-                        c.2.push_str(s.trim());
-                    }
+                    let s = t.decode().map_err(|e| e.to_string())?;
+                    if f == 0 { c.0.push_str(&s) } else { c.2.push_str(&s) }
+                }
+            }
+            // Entitäten (&quot;, &amp;, &#34; …) liefert quick-xml als eigenes Ereignis
+            Ok(Event::GeneralRef(r)) => {
+                if let (Some(f), Some(c)) = (field, cur.as_mut()) {
+                    let name = r.decode().map_err(|e| e.to_string())?;
+                    let ch: String = match r.resolve_char_ref().map_err(|e| e.to_string())? {
+                        Some(ch) => ch.to_string(),
+                        None => quick_xml::escape::resolve_predefined_entity(&name).ok_or(format!("Unbekannte Entität &{name};"))?.to_string(),
+                    };
+                    if f == 0 { c.0.push_str(&ch) } else { c.2.push_str(&ch) }
                 }
             }
             Ok(Event::Eof) => break,
@@ -298,6 +326,15 @@ mod tests {
         let d = Dav::new("cloud.example.com/", "Jörg", "x", "3D-Druck/Druck planer").unwrap();
         assert_eq!(d.url("", true), "https://cloud.example.com/remote.php/dav/files/J%C3%B6rg/3D-Druck/Druck%20planer/");
         assert_eq!(d.url("files/a b/x.3mf", false), "https://cloud.example.com/remote.php/dav/files/J%C3%B6rg/3D-Druck/Druck%20planer/files/a%20b/x.3mf");
+    }
+
+    #[test]
+    fn requires_https_for_remote_servers() {
+        assert!(Dav::new("http://cloud.example.com", "u", "p", "F").is_err());
+        assert!(Dav::new("http://127.0.0.1:8765", "u", "p", "F").is_ok());
+        assert!(Dav::new("http://[::1]:8765", "u", "p", "F").is_ok());
+        assert!(Dav::new("http://[2001:db8::1]", "u", "p", "F").is_err());
+        assert!(Dav::new("cloud.example.com", "u", "p", "F").is_ok());
     }
 
     #[test]

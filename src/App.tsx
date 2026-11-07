@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AboutDialog, APP_VERSION } from "./components/About";
 import { useStore } from "./lib/store";
 import { newProject } from "./lib/defaults";
 import { dateTime } from "./lib/format";
@@ -27,6 +28,7 @@ const NAV: { page: View["page"]; label: string; icon: string }[] = [
 export default function App() {
   const store = useStore();
   const [view, setView] = useState<View>({ page: "dashboard" });
+  const [about, setAbout] = useState(false);
 
   if (!store.ready) return <div className="loading">Lade Daten …</div>;
 
@@ -77,6 +79,9 @@ export default function App() {
             </button>
           )}
         </div>
+        <button className="link small about-link" onClick={() => setAbout(true)}>
+          ⓘ Über Druckplaner · v{APP_VERSION}
+        </button>
       </aside>
       <main className="content">
         {store.saveError && (
@@ -93,6 +98,7 @@ export default function App() {
         {view.page === "customers" && <Customers nav={setView} selected={view.id} onNewProject={createProject} />}
         {view.page === "settings" && <SettingsPage tab={view.tab} />}
       </main>
+      {about && <AboutDialog onClose={() => setAbout(false)} />}
     </div>
   );
 }

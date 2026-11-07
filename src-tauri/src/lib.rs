@@ -1,4 +1,5 @@
 mod config;
+mod migrate;
 mod store;
 pub mod sync;
 mod threemf;
@@ -157,6 +158,10 @@ fn files_rename(state: State<AppState>, project_id: String, name: String, new_na
 #[tauri::command]
 fn files_open(app: tauri::AppHandle, state: State<AppState>, project_id: String, name: String) -> R<()> {
     let p = store::project_file(&data_dir(&state), &project_id, &name)?;
+    // Programme und Skripte (die z. B. per Sync hereinkommen könnten) nicht direkt starten.
+    if store::is_executable_name(&name) {
+        return Err("Programme und Skripte werden aus Sicherheitsgründen nicht direkt geöffnet – bitte über „Zeigen“ im Ordner prüfen.".into());
+    }
     app.opener().open_path(p.to_string_lossy(), None::<&str>).map_err(|e| e.to_string())
 }
 
@@ -197,6 +202,9 @@ fn invoice_open(app: tauri::AppHandle, state: State<AppState>, name: String) -> 
 
 #[tauri::command]
 fn invoice_export(state: State<AppState>, name: String, target: String) -> R<()> {
+    if !target.to_lowercase().ends_with(".pdf") {
+        return Err("Es können nur PDF-Dateien gespeichert werden.".into());
+    }
     fs::copy(store::invoice_path(&data_dir(&state), &name)?, target).map(|_| ()).map_err(|e| e.to_string())
 }
 
@@ -207,6 +215,14 @@ fn invoice_delete(state: State<AppState>, name: String) -> R<()> {
         fs::remove_file(p).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+#[tauri::command]
+fn open_url(app: tauri::AppHandle, url: String) -> R<()> {
+    if !url.starts_with("https://") && !url.starts_with("http://") {
+        return Err("Nur http(s)-Links können geöffnet werden.".into());
+    }
+    app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -222,9 +238,31 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            config::init_keyring(&app.config().identifier);
             let config_dir = app.path().app_config_dir()?;
-            let default_data = app.path().app_data_dir()?.join("data");
-            let cfg = config::load(&config_dir, default_data);
+            let app_data = app.path().app_data_dir()?;
+
+            // Hat sich die App-Kennung geändert, die alten Ordner übernehmen.
+            let mut old_ids = Vec::new();
+            for dir in [&config_dir, &app_data] {
+                match migrate::move_previous(dir) {
+                    Ok(Some(old)) => old_ids.push(old),
+                    Ok(None) => {}
+                    Err(e) => eprintln!("Übernahme der alten Daten fehlgeschlagen: {e}"),
+                }
+            }
+            old_ids.dedup();
+
+            let mut cfg = config::load(&config_dir, app_data.join("data"));
+            for old in &old_ids {
+                if let Some(parent) = app_data.parent() {
+                    if let Some(p) = migrate::rebase(&cfg.data_dir, &parent.join(old), &app_data) {
+                        cfg.data_dir = p;
+                        let _ = config::save(&config_dir, &cfg);
+                    }
+                }
+                config::migrate_keyring(&cfg, old);
+            }
             fs::create_dir_all(cfg.data_path())?;
             app.manage(AppState { config: Mutex::new(cfg), config_dir, syncing: Default::default() });
             Ok(())
@@ -250,6 +288,7 @@ pub fn run() {
             invoice_open,
             invoice_export,
             invoice_delete,
+            open_url,
             open_data_dir,
         ])
         .run(tauri::generate_context!())
