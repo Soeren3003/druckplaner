@@ -118,7 +118,27 @@ jobs:
       - run: npm ci
       - run: npm test
 
-      - uses: tauri-apps/tauri-action@v0
+      # Tauri lädt beim Bauen Installer-Werkzeuge (WiX, NSIS) von GitHub. Fällt dieser Download kurz aus
+      # (z. B. HTTP 504), scheitert der Build ohne eigenen Fehler. Daher ein zweiter Versuch nach einer
+      # Pause; der Rust-Teil ist dann schon kompiliert und wird nicht neu gebaut.
+      - name: App bauen
+        id: build
+        continue-on-error: true
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+
+      - name: Kurz warten vor dem zweiten Versuch
+        if: steps.build.outcome == 'failure'
+        shell: bash
+        run: sleep 60
+
+      - name: App bauen (zweiter Versuch)
+        if: steps.build.outcome == 'failure'
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

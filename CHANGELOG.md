@@ -37,6 +37,10 @@ E-Mail-Versand und Druckwarteschlange.
   und lagen in Deutschland einen Tag vor dem richtigen Datum. Auch „heute“ konnte kurz nach Mitternacht noch der
   Vortag sein. Bereits erzeugte PDFs bleiben unverändert.
 
+- **Release-Build:** Bricht der Download der Installer-Werkzeuge (WiX, NSIS) kurz ab, versucht der Workflow den
+  Build nach einer Minute ein zweites Mal. Daran war das Release 1.1.0 unter Windows gescheitert (HTTP 504 beim
+  Laden von NSIS).
+
 ### Sicherheit
 - E-Mail nur verschlüsselt, genau ein geprüfter Empfänger, Schutz vor eingeschleusten Kopfzeilen, Anhänge nur aus
   dem Rechnungsordner (mit Tests). Neue Komponente: lettre (MIT).
