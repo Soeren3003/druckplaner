@@ -65,3 +65,14 @@ export function partsFromThreeMf(settings: Settings, fileName: string, info: Thr
     };
   });
 }
+
+/** CSS-Farbe zu einem Farbnamen („grün“) oder Hex-Wert, für Farbpunkte; unbekannt → null. */
+export function colorCss(name: string): string | null {
+  const t = name.trim().toLowerCase();
+  if (/^#?[0-9a-f]{6}$/.test(t)) return t.startsWith("#") ? t : `#${t}`;
+  const hit = NAMED.find(([n]) => t === n || t.startsWith(n));
+  if (hit) return `rgb(${hit[1]}, ${hit[2]}, ${hit[3]})`;
+  if (t.startsWith("weiss")) return "rgb(255, 255, 255)";
+  if (t === "transparent") return "rgba(200, 220, 235, 0.6)";
+  return null;
+}

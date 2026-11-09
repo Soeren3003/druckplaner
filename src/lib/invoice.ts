@@ -1,16 +1,11 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Customer, InvoiceRecord, Project, Settings } from "./types";
-import { date, fixed, money } from "./format";
+import { addDays, date, fixed, money } from "./format";
 import { projectLabel } from "./numbering";
 
 const clean = (s: string) => s.replace(/[  ]/g, " ");
 
-function addDays(iso: string, days: number) {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 /** „Muster, Max“ → „Max“, „Erika Beispiel“ → „Erika“ */
 export function firstName(name: string) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calcProject, documentLines, documentTotals, nextNumber, partDescription, round2 } from "./calc";
 import { defaultSettings, migrateProject, newFilament, newProject } from "./defaults";
-import { parseDuration, parseNum } from "./format";
+import { addDays, isoDate, parseDuration, parseNum } from "./format";
 import type { FilamentUse, PartLine } from "./types";
 
 const fil = (weight: number, extra: Partial<FilamentUse> = {}): FilamentUse => ({ ...newFilament(defaultSettings()), weight, ...extra });
@@ -95,6 +95,12 @@ describe("Eingaben", () => {
     expect(parseDuration("2h")).toBe(120);
     expect(parseDuration("45m")).toBe(45);
     expect(parseDuration("1,5")).toBe(90);
+  });
+  it("rechnet Fristen in lokaler Zeit", () => {
+    expect(addDays("2026-10-26", 14)).toBe("2026-11-09");
+    expect(addDays("2026-10-28", 30)).toBe("2026-11-27");
+    expect(addDays("2026-03-28", 1)).toBe("2026-03-29"); // Zeitumstellung
+    expect(isoDate(new Date(2026, 0, 1, 0, 30))).toBe("2026-01-01");
   });
   it("vergibt fortlaufende Nummern", () => {
     expect(nextNumber("R", 2026, [])).toBe("R2026-001");

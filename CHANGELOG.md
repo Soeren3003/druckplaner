@@ -8,6 +8,39 @@ Die Versionsnummern folgen der [semantischen Versionierung](https://semver.org/l
 - **MINOR** steigt bei neuen Funktionen, die bestehende Daten weiter lesen können.
 - **PATCH** steigt bei Fehlerbehebungen und kleinen Verbesserungen ohne neue Funktion.
 
+## [1.2.0] – 2026-11-09
+
+E-Mail-Versand und Druckwarteschlange.
+
+### Neu
+- **Angebote und Rechnungen per E-Mail:** In „Angebot & Rechnung“ öffnet **✉ E-Mail …** einen Dialog mit
+  Empfänger (aus dem Kunden), Betreff und Text aus Vorlagen.
+  - **Senden** verschickt die Mail direkt über SMTP, mit dem PDF im Anhang.
+  - **Im Mailprogramm öffnen** legt einen Entwurf im eigenen Mailprogramm an und zeigt das PDF zum Anhängen.
+  - Versanddatum und Empfänger werden am Dokument vermerkt. Eine neu eingegebene Adresse kann beim Kunden
+    gespeichert werden.
+- **Einstellungen → E-Mail:** SMTP-Server mit Vorlagen für gängige Anbieter (IONOS, GMX, WEB.DE, Gmail, Posteo,
+  Strato, Outlook.com), Verbindungstest, Blindkopie an sich selbst, Vorlagen für Betreff und Text mit Platzhaltern
+  wie `{vorname}`, `{nummer}`, `{betrag}` und `{faellig}`. Das SMTP-Passwort liegt im Schlüsselbund, die Zugangsdaten
+  gelten nur für den jeweiligen Rechner.
+- **Druckwarteschlange** (neuer Menüpunkt „Warteschlange“):
+  - Jedes noch zu druckende Druckteil aus Aufträgen mit Status „Beauftragt“ oder „Im Druck“.
+  - Sortierung nach Liefertermin, mit ↑↓ eigene Reihenfolge möglich; neue Teile ordnen sich nach Termin ein.
+  - Zeitplan je Drucker (Drucker laufen parallel) mit offener Druckzeit, „voraussichtlich fertig“ auf Basis der
+    Druckstunden pro Tag und Warnung, wenn ein Liefertermin nicht zu halten ist.
+  - Gedruckte Stück abhaken (+1 oder ✓ fertig, mit Zurücknehmen). Der Auftrag wechselt dabei automatisch auf
+    „Im Druck“ und, wenn alles gedruckt ist, auf „Fertig“.
+  - Filter nach Drucker, Anzahl offener Teile in der Seitenleiste.
+
+### Behoben
+- **Zahlungsziel und Gültigkeit einen Tag zu früh:** Fristen auf Rechnungen und Angeboten wurden über UTC berechnet
+  und lagen in Deutschland einen Tag vor dem richtigen Datum. Auch „heute“ konnte kurz nach Mitternacht noch der
+  Vortag sein. Bereits erzeugte PDFs bleiben unverändert.
+
+### Sicherheit
+- E-Mail nur verschlüsselt, genau ein geprüfter Empfänger, Schutz vor eingeschleusten Kopfzeilen, Anhänge nur aus
+  dem Rechnungsordner (mit Tests). Neue Komponente: lettre (MIT).
+
 ## [1.1.0] – 2026-11-09
 
 Mehrfarbige Drucke.

@@ -48,6 +48,11 @@ export interface InvoiceSettings {
   closing: string;
   textPrivat: string;
   textKleinunternehmer: string;
+  /** E-Mail-Vorlagen; Platzhalter siehe lib/mailtext.ts */
+  mailSubjectInvoice: string;
+  mailBodyInvoice: string;
+  mailSubjectQuote: string;
+  mailBodyQuote: string;
 }
 
 export interface Settings {
@@ -63,6 +68,8 @@ export interface Settings {
   colors: string[];
   workTemplates: WorkTemplate[];
   defaultPrinterId: string;
+  /** Für die Druckwarteschlange: wie viele Stunden am Tag die Drucker laufen. */
+  printHoursPerDay: number;
   defaultPackaging: number;
   defaultShipping: number;
   invoice: InvoiceSettings;
@@ -104,6 +111,10 @@ export interface PartLine {
   quantity: number;
   /** Mindestens ein Filament; bei mehrfarbigen Drucken mehrere mit eigenem Verbrauch. */
   filaments: FilamentUse[];
+  /** Bereits gedruckte Stück (Druckwarteschlange). */
+  printed?: number;
+  /** Eigene Position in der Druckwarteschlange; leer = nach Liefertermin. */
+  queueRank?: number;
   /** Druckzeit pro Stück in Minuten (bei 100 % Geschwindigkeit), gilt für das ganze Teil. */
   minutes: number;
   printerId: string;
@@ -147,6 +158,9 @@ export interface InvoiceRecord {
   vat: number;
   total: number;
   paidAt: string;
+  /** Zuletzt per E-Mail versendet (ISO-Zeitpunkt) und an wen. */
+  sentAt?: string;
+  sentTo?: string;
 }
 
 export interface Project {
@@ -202,9 +216,23 @@ export interface WebdavConfig {
   autoSyncMinutes: number;
 }
 
+export interface SmtpConfig {
+  enabled: boolean;
+  host: string;
+  /** 0 = Standard (587 bei STARTTLS, 465 bei SSL/TLS) */
+  port: number;
+  security: "starttls" | "ssl";
+  /** leer = Absenderadresse */
+  username: string;
+  fromName: string;
+  fromAddress: string;
+  copyToSelf: boolean;
+}
+
 export interface LocalConfig {
   dataDir: string;
   webdav: WebdavConfig;
+  smtp: SmtpConfig;
 }
 
 export interface SyncReport {

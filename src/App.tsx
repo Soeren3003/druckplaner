@@ -9,10 +9,13 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Customers from "./pages/Customers";
 import SettingsPage from "./pages/Settings";
+import Queue from "./pages/Queue";
+import { buildQueue } from "./lib/queue";
 
 export type View =
   | { page: "dashboard" }
   | { page: "projects" }
+  | { page: "queue" }
   | { page: "project"; id: string; tab?: string }
   | { page: "customers"; id?: string }
   | { page: "settings"; tab?: string };
@@ -27,12 +30,13 @@ function initialView(): View {
   if (project) return { page: "project", id: project, tab: p.get("tab") || undefined };
   const page = p.get("page");
   if (page === "customers") return { page, id: p.get("id") || undefined };
-  return page && ["dashboard", "projects", "settings"].includes(page) ? ({ page, tab: p.get("tab") || undefined } as View) : { page: "dashboard" };
+  return page && ["dashboard", "projects", "queue", "settings"].includes(page) ? ({ page, tab: p.get("tab") || undefined } as View) : { page: "dashboard" };
 }
 
 const NAV: { page: View["page"]; label: string; icon: string }[] = [
   { page: "dashboard", label: "Übersicht", icon: "◧" },
   { page: "projects", label: "Aufträge", icon: "▤" },
+  { page: "queue", label: "Warteschlange", icon: "▶" },
   { page: "customers", label: "Kunden", icon: "☺" },
   { page: "settings", label: "Einstellungen", icon: "⚙" },
 ];
@@ -51,6 +55,7 @@ export default function App() {
   };
 
   const active = view.page === "project" ? "projects" : view.page;
+  const queueCount = buildQueue(store.projects, store.customers, store.settings).open.length;
   const { sync, config } = store;
 
   return (
@@ -68,6 +73,7 @@ export default function App() {
             <button key={n.page} className={active === n.page ? "active" : ""} onClick={() => setView({ page: n.page } as View)}>
               <span className="nav-icon">{n.icon}</span>
               {n.label}
+              {n.page === "queue" && queueCount > 0 && <span className="nav-count">{queueCount}</span>}
             </button>
           ))}
         </nav>
@@ -106,6 +112,7 @@ export default function App() {
         )}
         {view.page === "dashboard" && <Dashboard nav={setView} onNew={createProject} />}
         {view.page === "projects" && <Projects nav={setView} />}
+        {view.page === "queue" && <Queue nav={setView} />}
         {view.page === "project" && <ProjectDetail id={view.id} nav={setView} initialTab={view.tab} />}
         {view.page === "customers" && <Customers nav={setView} selected={view.id} onNewProject={createProject} />}
         {view.page === "settings" && <SettingsPage tab={view.tab} />}

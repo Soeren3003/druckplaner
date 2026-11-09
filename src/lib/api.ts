@@ -13,8 +13,14 @@ export type Collection = "customers" | "projects" | "settings";
 
 export const api = {
   getConfig: () => call<LocalConfig>("get_config"),
-  saveConfig: (config: LocalConfig, password?: string) => call<boolean>("save_config", { config, password }),
+  saveConfig: (config: LocalConfig, password?: string, smtpPassword?: string) => call<boolean>("save_config", { config, password, smtpPassword }),
   hasPassword: () => call<boolean>("has_password"),
+  hasSmtpPassword: () => call<boolean>("has_smtp_password"),
+  mailTest: () => call<string>("mail_test"),
+  /** Versand über SMTP, optional mit dem PDF aus dem Datenordner (Dateiname) als Anhang. */
+  mailSend: (to: string, subject: string, body: string, invoice?: string) => call<void>("mail_send", { to, subject, body, invoice }),
+  /** Entwurf im Mailprogramm öffnen und das PDF im Finder/Explorer zeigen. */
+  mailOpen: (to: string, subject: string, body: string, invoice?: string) => call<void>("mail_open", { to, subject, body, invoice }),
   testConnection: () => call<string>("test_connection"),
   syncNow: () => call<SyncReport>("sync_now"),
 
@@ -89,7 +95,11 @@ function mock(cmd: string, args: Record<string, unknown>): unknown {
   const write = (c: unknown, v: Record<string, unknown>) => localStorage.setItem(key(c), JSON.stringify(v));
   switch (cmd) {
     case "get_config":
-      return { dataDir: "(Browser-Vorschau)", webdav: { enabled: false, url: "", username: "", remoteFolder: "Druckplaner", autoSyncMinutes: 0 } };
+      return {
+        dataDir: "(Browser-Vorschau)",
+        webdav: { enabled: false, url: "", username: "", remoteFolder: "Druckplaner", autoSyncMinutes: 0 },
+        smtp: { enabled: false, host: "", port: 0, security: "starttls", username: "", fromName: "", fromAddress: "", copyToSelf: false },
+      };
     case "db_list":
       return Object.values(read(args.collection));
     case "db_put": {
@@ -106,6 +116,10 @@ function mock(cmd: string, args: Record<string, unknown>): unknown {
     }
     case "files_list":
       return [];
+    case "mail_open":
+      window.open(`mailto:${encodeURIComponent(String(args.to))}?subject=${encodeURIComponent(String(args.subject))}&body=${encodeURIComponent(String(args.body))}`);
+      return;
+    case "has_smtp_password":
     case "has_password":
       return false;
     case "invoice_save": {

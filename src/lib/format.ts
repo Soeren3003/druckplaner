@@ -57,3 +57,15 @@ export function bytes(n: number) {
 export function safeFileName(s: string) {
   return s.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ").trim().slice(0, 120);
 }
+
+/** Datum als „JJJJ-MM-TT“ in lokaler Zeit (toISOString rechnet in UTC und läge nachts einen Tag daneben). */
+export function isoDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** „2026-10-26“ + 14 Tage → „2026-11-09“ */
+export function addDays(iso: string, days: number) {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return isoDate(d);
+}

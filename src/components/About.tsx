@@ -15,7 +15,8 @@ const CREDITS: [string, string, string][] = [
   ["reqwest & rustls", "https://github.com/seanmonstar/reqwest", "verschlüsselte WebDAV-Verbindung"],
   ["quick-xml", "https://github.com/tafia/quick-xml", "WebDAV-Antworten und 3MF-Metadaten"],
   ["zip", "https://github.com/zip-rs/zip2", "Vorschaubilder und Slicer-Daten aus 3MF-Dateien"],
-  ["keyring", "https://github.com/hwchen/keyring-rs", "App-Passwort im System-Schlüsselbund"],
+  ["lettre", "https://github.com/lettre/lettre", "Versand von Angeboten und Rechnungen per E-Mail"],
+  ["keyring", "https://github.com/hwchen/keyring-rs", "Passwörter im System-Schlüsselbund"],
 ];
 
 function Link({ href, children }: { href: string; children: string }) {

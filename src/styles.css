@@ -387,6 +387,10 @@ textarea {
   margin-bottom: 12px;
 }
 
+.wide-check {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+}
 .check {
   display: inline-flex;
   gap: 8px;
@@ -1198,6 +1202,60 @@ ul.plain {
 }
 .tp-detail {
   padding: 4px 0 6px 16px;
+}
+
+/* ---------- Druckwarteschlange ---------- */
+
+.nav-count {
+  margin-left: auto;
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 7px;
+  line-height: 18px;
+}
+.queue-stats .stat .row {
+  max-width: 140px;
+}
+table.queue td {
+  vertical-align: top;
+}
+table.queue tr.late td:first-child {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+table.queue tr.done td {
+  opacity: 0.55;
+}
+.late-text {
+  color: var(--danger);
+}
+.q-part {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.q-actions button {
+  margin-left: 2px;
+}
+.filament-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+.fdot-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.fdot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: repeating-linear-gradient(45deg, var(--muted), var(--muted) 2px, transparent 2px, transparent 4px);
+  box-shadow: 0 0 0 1px var(--border);
+  flex-shrink: 0;
 }
 
 /* ---------- Dialog ---------- */

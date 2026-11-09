@@ -673,6 +673,20 @@
  },
  {
   "kind": "crate",
+  "name": "email_address",
+  "version": "0.2.9",
+  "license": "MIT",
+  "url": "https://github.com/johnstonskj/rust-email_address.git"
+ },
+ {
+  "kind": "crate",
+  "name": "email-encoding",
+  "version": "0.4.2",
+  "license": "MIT OR Apache-2.0",
+  "url": "https://github.com/lettre/email-encoding"
+ },
+ {
+  "kind": "crate",
   "name": "embed_plist",
   "version": "1.2.2",
   "license": "MIT OR Apache-2.0",
@@ -1085,6 +1099,13 @@
   "url": "https://github.com/RustCrypto/MACs"
  },
  {
+  "kind": "crate",
+  "name": "hostname",
+  "version": "0.4.2",
+  "license": "MIT",
+  "url": "https://github.com/djc/hostname"
+ },
+ {
   "kind": "npm",
   "name": "html2canvas",
   "version": "1.4.1",
@@ -1125,6 +1146,13 @@
   "version": "1.10.1",
   "license": "MIT OR Apache-2.0",
   "url": "https://github.com/seanmonstar/httparse"
+ },
+ {
+  "kind": "crate",
+  "name": "httpdate",
+  "version": "1.0.3",
+  "license": "MIT OR Apache-2.0",
+  "url": "https://github.com/pyfisch/httpdate"
  },
  {
   "kind": "crate",
@@ -1401,6 +1429,13 @@
  },
  {
   "kind": "crate",
+  "name": "lettre",
+  "version": "0.11.23",
+  "license": "MIT",
+  "url": "https://github.com/lettre/lettre"
+ },
+ {
+  "kind": "crate",
   "name": "libc",
   "version": "0.2.191",
   "license": "MIT OR Apache-2.0",
@@ -1545,6 +1580,13 @@
   "version": "0.31.3",
   "license": "MIT",
   "url": "https://github.com/nix-rust/nix"
+ },
+ {
+  "kind": "crate",
+  "name": "nom",
+  "version": "8.0.0",
+  "license": "MIT",
+  "url": "https://github.com/rust-bakery/nom"
  },
  {
   "kind": "crate",
@@ -1958,6 +2000,13 @@
   "version": "1.0.47",
   "license": "MIT OR Apache-2.0",
   "url": "https://github.com/dtolnay/quote"
+ },
+ {
+  "kind": "crate",
+  "name": "quoted_printable",
+  "version": "0.5.2",
+  "license": "0BSD",
+  "url": "https://github.com/staktrace/quoted-printable"
  },
  {
   "kind": "crate",

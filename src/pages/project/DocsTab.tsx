@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MailDialog } from "../../components/MailDialog";
 import { Empty, Field, Modal } from "../../components/ui";
 import { api, confirmDialog, pickSavePath } from "../../lib/api";
 import { calcProject, documentLines, documentTotals, nextNumber, vatRateFor, type DetailLevel } from "../../lib/calc";
@@ -16,6 +17,7 @@ export default function DocsTab({ project, update }: { project: Project; update:
   const [draft, setDraft] = useState<{ kind: Kind; number: string; date: string; detail: DetailLevel; note: string } | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mailing, setMailing] = useState<InvoiceRecord | null>(null);
   const customer = customers.find((c) => c.id === project.customerId);
   const cur = settings.currency;
 
@@ -102,6 +104,7 @@ export default function DocsTab({ project, update }: { project: Project; update:
               <th>Datum</th>
               <th className="r">Betrag</th>
               <th>Bezahlt</th>
+              <th>Versendet</th>
               <th />
             </tr>
           </thead>
@@ -124,7 +127,17 @@ export default function DocsTab({ project, update }: { project: Project; update:
                     </label>
                   )}
                 </td>
+                <td className="small">
+                  {r.sentAt ? (
+                    <span title={r.sentTo}>✉ {date(r.sentAt.slice(0, 10))}</span>
+                  ) : (
+                    <span className="muted">–</span>
+                  )}
+                </td>
                 <td className="r nowrap">
+                  <button className="ghost small" onClick={() => setMailing(r)} title="Per E-Mail an den Kunden senden">
+                    ✉ E-Mail …
+                  </button>
                   <button className="ghost small" onClick={() => exportPdf(r)}>
                     Speichern unter …
                   </button>
@@ -136,6 +149,18 @@ export default function DocsTab({ project, update }: { project: Project; update:
             ))}
           </tbody>
         </table>
+      )}
+
+      {mailing && (
+        <MailDialog
+          rec={mailing}
+          project={project}
+          customer={customer}
+          onClose={() => setMailing(null)}
+          onSent={(to) =>
+            setRec(mailing.id, { sentAt: new Date().toISOString(), sentTo: to }, mailing.kind === "angebot" && project.status === "anfrage" ? { status: "angebot" } : {})
+          }
+        />
       )}
 
       {draft && (

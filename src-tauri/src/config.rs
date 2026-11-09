@@ -1,19 +1,20 @@
-//! Lokale, nicht synchronisierte Einstellungen (Datenordner, WebDAV-Zugang).
+//! Lokale, nicht synchronisierte Einstellungen (Datenordner, WebDAV- und SMTP-Zugang).
+//! Passwörter liegen im Schlüsselbund des Systems, nie in synchronisierten Dateien.
 
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-/// Schlüsselbund-Eintrag „<App-Kennung>.webdav“, gesetzt beim Start.
-static KEYRING_SERVICE: OnceLock<String> = OnceLock::new();
+/// App-Kennung für die Schlüsselbund-Einträge „<Kennung>.webdav“ und „<Kennung>.smtp“, gesetzt beim Start.
+static APP_ID: OnceLock<String> = OnceLock::new();
 
 pub fn init_keyring(identifier: &str) {
-    let _ = KEYRING_SERVICE.set(format!("{identifier}.webdav"));
+    let _ = APP_ID.set(identifier.to_string());
 }
 
-fn service() -> &'static str {
-    KEYRING_SERVICE.get().map(String::as_str).unwrap_or("druckplaner.webdav")
+fn service(kind: &str) -> String {
+    format!("{}.{kind}", APP_ID.get().map(String::as_str).unwrap_or("druckplaner"))
 }
 
 /// Passwort aus dem Schlüsselbund-Eintrag einer früheren App-Kennung übernehmen.
@@ -48,9 +49,37 @@ pub struct WebdavConfig {
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 #[serde(rename_all = "camelCase", default)]
+pub struct SmtpConfig {
+    pub enabled: bool,
+    pub host: String,
+    /// 0 = Standard für die gewählte Verschlüsselung (587 bzw. 465).
+    pub port: u16,
+    /// „starttls“ (Standard) oder „ssl“. Unverschlüsselt wird nie gesendet.
+    pub security: String,
+    /// Leer = Absenderadresse.
+    pub username: String,
+    pub from_name: String,
+    pub from_address: String,
+    /// Blindkopie an die eigene Adresse.
+    pub copy_to_self: bool,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub password_fallback: String,
+}
+
+impl SmtpConfig {
+    /// Konto für den Schlüsselbund-Eintrag.
+    fn account(&self) -> String {
+        let u = self.username.trim();
+        if u.is_empty() { self.from_address.trim().to_string() } else { u.to_string() }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[serde(rename_all = "camelCase", default)]
 pub struct LocalConfig {
     pub data_dir: String,
     pub webdav: WebdavConfig,
+    pub smtp: SmtpConfig,
 }
 
 impl LocalConfig {
@@ -72,6 +101,7 @@ impl LocalConfig {
     pub fn public(&self) -> LocalConfig {
         let mut c = self.clone();
         c.webdav.password_fallback.clear();
+        c.smtp.password_fallback.clear();
         c
     }
 }
@@ -106,7 +136,7 @@ pub fn save(config_dir: &Path, cfg: &LocalConfig) -> Result<(), String> {
 }
 
 fn entry(username: &str) -> Result<keyring::Entry, keyring::Error> {
-    keyring::Entry::new(service(), username)
+    keyring::Entry::new(&service("webdav"), username)
 }
 
 /// Speichert das Passwort im System-Schlüsselbund; liefert `false`, wenn nur der Fallback ging.
@@ -131,4 +161,25 @@ pub fn load_password(cfg: &LocalConfig) -> Option<String> {
     entry(cfg.webdav.username.trim())
         .and_then(|e| e.get_password())
         .ok()
+}
+
+/// SMTP-Passwort im Schlüsselbund speichern; liefert `false`, wenn nur der Fallback ging.
+pub fn store_smtp_password(cfg: &mut LocalConfig, password: &str) -> bool {
+    match keyring::Entry::new(&service("smtp"), &cfg.smtp.account()).and_then(|e| e.set_password(password)) {
+        Ok(()) => {
+            cfg.smtp.password_fallback.clear();
+            true
+        }
+        Err(_) => {
+            cfg.smtp.password_fallback = password.to_string();
+            false
+        }
+    }
+}
+
+pub fn load_smtp_password(cfg: &LocalConfig) -> Option<String> {
+    if !cfg.smtp.password_fallback.is_empty() {
+        return Some(cfg.smtp.password_fallback.clone());
+    }
+    keyring::Entry::new(&service("smtp"), &cfg.smtp.account()).and_then(|e| e.get_password()).ok()
 }

@@ -1,9 +1,10 @@
+import { isoDate } from "./format";
 import { nextCustomerNumber, nextProjectNumber } from "./numbering";
 import type { Customer, FilamentUse, PartLine, Project, Settings, WorkLine } from "./types";
 
 export const uid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = () => isoDate(new Date());
 
 /** Werte aus „Druckkostenrechner_Projekt.ods“ übernommen. */
 export function defaultSettings(): Settings {
@@ -56,6 +57,7 @@ export function defaultSettings(): Settings {
       work("Sekundenleim-Manipulationen", "Stk.", 0),
       work("Nachvermessungen", "h", 0),
     ],
+    printHoursPerDay: 8,
     defaultPackaging: 0,
     defaultShipping: 0,
     invoice: {
@@ -67,6 +69,12 @@ export function defaultSettings(): Settings {
       closing: "Viele Grüße",
       textPrivat: "Privatverkauf – es wird keine Umsatzsteuer ausgewiesen.",
       textKleinunternehmer: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
+      mailSubjectInvoice: "Rechnung {nummer} – {auftrag}",
+      mailBodyInvoice:
+        "Hallo {vorname},\n\nvielen Dank für deinen Auftrag! Im Anhang findest du die Rechnung {nummer} über {betrag}.\nBitte überweise den Betrag bis zum {faellig}.\n\nViele Grüße\n{absender}",
+      mailSubjectQuote: "Angebot {nummer} – {auftrag}",
+      mailBodyQuote:
+        "Hallo {vorname},\n\nvielen Dank für deine Anfrage! Im Anhang findest du mein Angebot {nummer} über {betrag}. Es gilt bis zum {gueltig}.\nGib mir einfach Bescheid, wenn ich loslegen soll.\n\nViele Grüße\n{absender}",
     },
   };
 }

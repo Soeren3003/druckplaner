@@ -5,7 +5,8 @@
 <h1 align="center">Druckplaner</h1>
 
 <p align="center">
-  Projekt- und Kostenplanung für 3D-Druckaufträge: Kalkulation, Kunden, Druckdateien, Angebote und Rechnungen.<br>
+  Projekt- und Kostenplanung für 3D-Druckaufträge: Kalkulation, Kunden, Druckdateien, Druckwarteschlange,<br>
+  Angebote und Rechnungen – auf Wunsch direkt per E-Mail.<br>
   Für macOS, Windows und Linux, mit Abgleich über Nextcloud bzw. WebDAV.
 </p>
 
@@ -30,6 +31,7 @@
 - [Installation](#installation)
 - [Erste Schritte](#erste-schritte)
 - [So rechnet der Druckplaner](#so-rechnet-der-druckplaner)
+- [Angebote und Rechnungen per E-Mail](#angebote-und-rechnungen-per-e-mail)
 - [Gemeinsam nutzen mit Nextcloud](#gemeinsam-nutzen-mit-nextcloud)
 - [Wo liegen die Daten?](#wo-liegen-die-daten)
 - [Entwicklung](#entwicklung)
@@ -102,6 +104,21 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 - Steuerhinweis wählbar: **Privatverkauf**, **Kleinunternehmer (§ 19 UStG)** oder **mit Umsatzsteuer**
 - Rechnungen als bezahlt markieren; das Datum fließt in die Übersicht ein
 - Texte für Einleitung, Grußformel und Hinweise in den Einstellungen anpassbar
+- **Per E-Mail an den Kunden:** direkt aus der App über SMTP mit dem PDF im Anhang oder als Entwurf im eigenen
+  Mailprogramm. Betreff und Text kommen aus Vorlagen, Versanddatum und Empfänger werden vermerkt (siehe
+  [Angebote und Rechnungen per E-Mail](#angebote-und-rechnungen-per-e-mail)).
+
+### Druckwarteschlange
+
+- Zeigt, **was als Nächstes gedruckt werden muss**: jedes offene Druckteil aus Aufträgen mit Status „Beauftragt“ oder
+  „Im Druck“, mit Liefertermin, Filamentfarben, Drucker, offenen Stück und offener Druckzeit.
+- **Reihenfolge nach Liefertermin**, mit ↑↓ von Hand änderbar. Neue Teile ordnen sich nach ihrem Termin ein, „Nach
+  Termin sortieren“ verwirft die eigene Reihenfolge.
+- **Zeitplan je Drucker:** Mehrere Drucker laufen parallel. Aus den *Druckstunden pro Tag* berechnet der Druckplaner,
+  wann jedes Teil voraussichtlich fertig ist, und **warnt, wenn ein Liefertermin nicht zu halten ist**.
+- **Abhaken:** „+1“ für ein gedrucktes Stück, „✓ fertig“ für alle, ↶ zum Zurücknehmen. Mit dem ersten Stück springt
+  der Auftrag auf „Im Druck“, wenn alles gedruckt ist auf „Fertig“.
+- Filter nach Drucker; die Zahl offener Teile steht in der Seitenleiste.
 
 ### Kunden
 
@@ -125,9 +142,11 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 
 ## Screenshots
 
-| Auftrag mit mehrfarbigem Druckteil | Angebote und Rechnungen |
+| Druckwarteschlange | Rechnung per E-Mail |
 | --- | --- |
-| <img src="docs/screenshots/project.jpg" alt="Auftrag: mehrfarbiges Druckteil mit drei Filamenten, Rollenpreise je Filament, Zusammenfassung" width="440"> | <img src="docs/screenshots/documents.jpg" alt="Auftrag: Liste der Angebote und Rechnungen mit Bezahlt-Status" width="440"> |
+| <img src="docs/screenshots/queue.jpg" alt="Druckwarteschlange: offene Druckteile nach Termin, Drucker, offene Stück, Druckzeit, voraussichtlich fertig mit Warnung" width="440"> | <img src="docs/screenshots/mail.jpg" alt="E-Mail-Dialog mit Empfänger, Betreff, Text aus der Vorlage und PDF-Anhang" width="440"> |
+| **Auftrag mit mehrfarbigem Druckteil** | **Angebote und Rechnungen** |
+| <img src="docs/screenshots/project.jpg" alt="Auftrag: mehrfarbiges Druckteil mit drei Filamenten, Rollenpreise je Filament, Zusammenfassung" width="440"> | <img src="docs/screenshots/documents.jpg" alt="Auftrag: Liste der Angebote und Rechnungen mit Bezahlt- und Versandstatus" width="440"> |
 | **Aufträge** | **Kunden** |
 | <img src="docs/screenshots/projects.jpg" alt="Auftragsliste mit Nummer, Kunde, Status, Rechnung und Betrag" width="440"> | <img src="docs/screenshots/customers.jpg" alt="Kunden mit Kundennummer, Anschrift und Aufträgen" width="440"> |
 | **Einstellungen: Filamente** | **Angebot als PDF, mit mehrfarbigem Druckteil** |
@@ -173,7 +192,13 @@ Siehe [Entwicklung](#entwicklung) und [Bauen und Veröffentlichen](#bauen-und-ve
 4. **Einstellungen → Filamente:** Rollenpreise und gewünschten Aufschlag prüfen.
 5. **+ Neuer Auftrag:** Kunde wählen oder anlegen, Beschreibung eintragen, Druckteile mit Gewicht und Druckzeit aus
    dem Slicer erfassen – oder die 3MF-Datei unter *Dateien* ablegen und die Werte übernehmen.
-6. Unter **Angebot & Rechnung** das PDF erzeugen. Ist die Rechnung bezahlt, Häkchen setzen – fertig.
+6. Unter **Angebot & Rechnung** das PDF erzeugen und mit **✉ E-Mail …** an den Kunden schicken.
+7. Ist der Auftrag beauftragt, Status auf **Beauftragt** setzen. Er erscheint dann in der **Warteschlange**; dort
+   gedruckte Stück abhaken.
+8. Ist die Rechnung bezahlt, Häkchen setzen – fertig.
+
+Optional: **Einstellungen → E-Mail** für den direkten Versand und **Einstellungen → Daten & Sync** für die
+Nextcloud.
 
 ## So rechnet der Druckplaner
 
@@ -201,6 +226,36 @@ wird der Steuersatz aufgeschlagen.
 
 Auf der Rechnung werden die Stückpreise auf volle Cent gerundet. Weicht die Summe dadurch um ein paar Cent von der
 Kalkulation ab, zeigt der Dialog das vor dem Erzeugen an.
+
+## Angebote und Rechnungen per E-Mail
+
+In jedem Auftrag unter *Angebot & Rechnung* öffnet **✉ E-Mail …** einen Dialog:
+
+- **An** ist die E-Mail-Adresse aus dem Kunden. Fehlt sie, kannst du sie eintragen und direkt beim Kunden speichern.
+- **Betreff** und **Text** kommen aus den Vorlagen unter *Einstellungen → E-Mail* und lassen sich vor dem Senden
+  anpassen.
+- **Senden** verschickt die Mail direkt mit dem PDF im Anhang. Dafür muss der SMTP-Versand eingerichtet sein.
+- **Im Mailprogramm öffnen** geht immer, auch ohne Einrichtung: Es legt einen Entwurf im Standard-Mailprogramm an
+  und zeigt das PDF im Finder bzw. Explorer. Das PDF ziehst du dann in die Mail, denn Anhänge lassen sich über
+  diesen Weg technisch nicht mitgeben.
+
+Danach steht in der Liste, wann und an wen das Dokument verschickt wurde. Ein versendetes Angebot setzt eine
+Anfrage auf „Angebot“.
+
+**SMTP einrichten** (*Einstellungen → E-Mail*):
+
+1. Unter *Anbieter-Vorlage* den eigenen Anbieter wählen (IONOS, GMX, WEB.DE, Gmail, Posteo, Strato,
+   Outlook.com) oder Server, Verschlüsselung und Port selbst eintragen.
+2. Absendername, Absenderadresse und Passwort eintragen; der Benutzername ist meist die Absenderadresse. Gmail
+   verlangt ein App-Passwort, bei GMX und WEB.DE muss der Zugriff über E-Mail-Programme erlaubt sein.
+3. *Direkten Versand aktivieren*, speichern und *Verbindung testen*.
+
+Optional schickt der Druckplaner eine Blindkopie jeder Mail an dich selbst, als Nachweis im eigenen Postfach. Die
+SMTP-Zugangsdaten gelten nur für den jeweiligen Rechner und werden nicht synchronisiert; das Passwort liegt im
+Schlüsselbund. Gesendet wird immer verschlüsselt (STARTTLS oder SSL/TLS).
+
+In den Vorlagen stehen diese Platzhalter zur Verfügung: `{vorname}`, `{name}`, `{nummer}`, `{auftrag}`,
+`{auftragsnr}`, `{betrag}`, `{faellig}` (Zahlungsziel), `{gueltig}` (Gültigkeit des Angebots) und `{absender}`.
 
 ## Gemeinsam nutzen mit Nextcloud
 
@@ -253,7 +308,8 @@ conflicts/                  (nur lokal) ältere Version bei Sync-Konflikten
 .sync-state.json            (nur lokal) Stand des letzten Abgleichs
 ```
 
-Daneben liegt die lokale `config.json` mit Datenordner und Sync-Einstellungen, aber ohne Passwort. Der
+Daneben liegt die lokale `config.json` mit Datenordner, Sync- und SMTP-Einstellungen, aber ohne Passwörter. Diese
+liegen im Schlüsselbund des Systems (Einträge `de.soeren3003.druckplaner.webdav` und `…smtp`). Der
 Datenordner lässt sich in den Einstellungen ändern, *Öffnen* zeigt ihn im Finder bzw. Explorer.
 
 Zum **Sichern** genügt eine Kopie des Datenordners.
@@ -307,12 +363,16 @@ src/                          Oberfläche (React + TypeScript)
   lib/invoice.ts              PDF für Angebote und Rechnungen (jsPDF)
   lib/store.tsx               Daten laden, speichern, synchronisieren
   lib/api.ts                  Brücke zur Desktop-Hülle (im Browser: Ersatz mit localStorage)
+  lib/queue.ts                Druckwarteschlange: Reihenfolge, Zeitplan je Drucker, Status beim Abhaken
+  lib/mailtext.ts             E-Mail-Vorlagen mit Platzhaltern
+  lib/threemf.ts              Druckteile aus 3MF-Daten, Farbnamen
   lib/demo.ts                 erfundene Beispieldaten
 src-tauri/                    Desktop-Hülle (Rust, Tauri 2)
   src/lib.rs                  Befehle für die Oberfläche
   src/store.rs                Ablage im Datenordner, Prüfung von Kennungen und Dateinamen
   src/sync.rs                 Zwei-Wege-Abgleich mit Konfliktbehandlung
   src/webdav.rs               WebDAV-Client
+  src/mail.rs                 E-Mail-Versand über SMTP (lettre) und mailto-Links
   src/threemf.rs              Vorschaubild, Gewicht und Druckzeit aus 3MF-Dateien
   src/config.rs               lokale Einstellungen und Schlüsselbund
   src/migrate.rs              Übernahme der Daten nach einer Änderung der App-Kennung
@@ -364,8 +424,10 @@ git tag -a v1.1.0 -m "Version 1.1.0"
 
 Das Sicherheitskonzept und der Weg zum Melden von Lücken stehen in **[SECURITY.md](SECURITY.md)**. Kurz gesagt:
 
-- **Zugangsdaten nur lokal:** Es gibt keine Zugangsdaten im Repository. Das Nextcloud-App-Passwort liegt im
-  Schlüsselbund.
+- **Zugangsdaten nur lokal:** Es gibt keine Zugangsdaten im Repository. Das Nextcloud-App-Passwort und das
+  SMTP-Passwort liegen im Schlüsselbund.
+- **E-Mail nur verschlüsselt,** genau ein geprüfter Empfänger pro Mail, keine eingeschleusten Kopfzeilen, Anhänge nur
+  aus dem eigenen Rechnungsordner.
 - **Abgeschottete Oberfläche:** Eine strikte Content-Security-Policy gilt, und fremde Daten werden nie als HTML
   eingesetzt.
 - **Geprüfte Befehle:** Was die Oberfläche anstoßen kann, ist eng begrenzt (Dateinamen, Dateitypen, Links).
@@ -402,6 +464,11 @@ Tauri-Updates behoben.
 - Gewicht und Druckzeit lassen sich nur aus 3MF-Dateien von Bambu Studio und OrcaSlicer lesen, und nur, wenn die
   Datei nach dem Slicen gespeichert wurde. Aus STL-Dateien werden keine Werte gelesen.
 - Ein eigenes Logo auf Rechnungen ist noch nicht möglich.
+- E-Mails gehen an genau einen Empfänger. Weitere Empfänger lassen sich über *Im Mailprogramm öffnen* ergänzen.
+- Manche Anbieter, etwa Microsoft bei Outlook.com, erlauben die SMTP-Anmeldung per Passwort nicht mehr. Dann bleibt
+  der Weg über das Mailprogramm.
+- Die Druckwarteschlange plant jeden Drucker als eine Maschine, die nacheinander druckt. Pausen, Plattenwechsel und
+  Fehldrucke stecken nur pauschal in den *Druckstunden pro Tag*.
 - Bei mehrfarbigen Drucken wird der Abfall beim Farbwechsel (Purge, Prime Tower) nicht gesondert erfasst. Er steckt
   im Verbrauch, den der Slicer je Filament angibt, oder lässt sich über den Filamentaufschlag berücksichtigen.
 - Beim Sync sollten alle Geräte dieselbe Version nutzen. Ab Version 1.1 speichert der Druckplaner mehrere Filamente
@@ -457,4 +524,5 @@ Die wichtigsten Komponenten:
 | [reqwest](https://github.com/seanmonstar/reqwest) mit [rustls](https://github.com/rustls/rustls) | verschlüsselte WebDAV-Verbindung | MIT / Apache-2.0 |
 | [quick-xml](https://github.com/tafia/quick-xml) | WebDAV-Antworten, 3MF-Metadaten | MIT |
 | [zip](https://github.com/zip-rs/zip2) | Lesen von 3MF-Dateien | MIT |
-| [keyring](https://github.com/hwchen/keyring-rs) | App-Passwort im Schlüsselbund | MIT / Apache-2.0 |
+| [lettre](https://github.com/lettre/lettre) | E-Mail-Versand über SMTP | MIT |
+| [keyring](https://github.com/hwchen/keyring-rs) | Passwörter im Schlüsselbund | MIT / Apache-2.0 |

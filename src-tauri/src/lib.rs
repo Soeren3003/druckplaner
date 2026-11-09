@@ -1,4 +1,5 @@
 mod config;
+mod mail;
 mod migrate;
 mod store;
 pub mod sync;
@@ -55,23 +56,80 @@ fn get_config(state: State<AppState>) -> LocalConfig {
 }
 
 #[tauri::command]
-fn save_config(state: State<AppState>, config: LocalConfig, password: Option<String>) -> R<bool> {
-    let mut cur = state.config.lock().unwrap();
-    let fallback = std::mem::take(&mut cur.webdav.password_fallback);
-    let user_changed = cur.webdav.username != config.webdav.username;
-    *cur = config;
-    if cur.data_dir.trim().is_empty() {
+fn save_config(state: State<AppState>, config: LocalConfig, password: Option<String>, smtp_password: Option<String>) -> R<bool> {
+    if config.data_dir.trim().is_empty() {
         return Err("Datenordner darf nicht leer sein.".into());
     }
+    let mut cur = state.config.lock().unwrap();
+    let fallback = std::mem::take(&mut cur.webdav.password_fallback);
+    let smtp_fallback = std::mem::take(&mut cur.smtp.password_fallback);
+    let user_changed = cur.webdav.username != config.webdav.username;
+    let smtp_user_changed = (cur.smtp.username.trim(), cur.smtp.from_address.trim()) != (config.smtp.username.trim(), config.smtp.from_address.trim());
+    *cur = config;
     if !user_changed {
         cur.webdav.password_fallback = fallback;
     }
+    if !smtp_user_changed {
+        cur.smtp.password_fallback = smtp_fallback;
+    }
     let mut keychain_ok = true;
     if let Some(pw) = password.filter(|p| !p.is_empty()) {
-        keychain_ok = config::store_password(&mut cur, &pw);
+        keychain_ok &= config::store_password(&mut cur, &pw);
+    }
+    if let Some(pw) = smtp_password.filter(|p| !p.is_empty()) {
+        keychain_ok &= config::store_smtp_password(&mut cur, &pw);
     }
     config::save(&state.config_dir, &cur)?;
     Ok(keychain_ok)
+}
+
+#[tauri::command]
+fn has_smtp_password(state: State<AppState>) -> bool {
+    config::load_smtp_password(&state.config.lock().unwrap()).is_some()
+}
+
+#[tauri::command]
+async fn mail_test(state: State<'_, AppState>) -> R<String> {
+    let cfg = state.config.lock().unwrap().clone();
+    let pw = config::load_smtp_password(&cfg).ok_or("Kein SMTP-Passwort hinterlegt.")?;
+    mail::test(&cfg.smtp, &pw).await?;
+    Ok("Verbindung und Anmeldung erfolgreich.".into())
+}
+
+/// Sendet eine E-Mail über SMTP, optional mit einem Angebot/einer Rechnung aus dem Datenordner als Anhang.
+#[tauri::command]
+async fn mail_send(state: State<'_, AppState>, to: String, subject: String, body: String, invoice: Option<String>) -> R<()> {
+    let cfg = state.config.lock().unwrap().clone();
+    if !cfg.smtp.enabled {
+        return Err("E-Mail-Versand ist nicht eingerichtet (Einstellungen → E-Mail).".into());
+    }
+    let pw = config::load_smtp_password(&cfg).ok_or("Kein SMTP-Passwort hinterlegt.")?;
+    let attachment = match &invoice {
+        Some(name) => {
+            if !name.to_lowercase().ends_with(".pdf") {
+                return Err("Nur PDF-Dateien können angehängt werden.".into());
+            }
+            let bytes = fs::read(store::invoice_path(&cfg.data_path(), name)?).map_err(|_| "PDF nicht gefunden – evtl. noch nicht synchronisiert.".to_string())?;
+            Some((name.as_str(), bytes))
+        }
+        None => None,
+    };
+    let message = mail::build_message(&cfg.smtp, &to, &subject, &body, attachment)?;
+    mail::send(&cfg.smtp, &pw, message).await
+}
+
+/// Öffnet einen Entwurf im Mailprogramm und zeigt das PDF im Finder/Explorer zum Anhängen.
+#[tauri::command]
+fn mail_open(app: tauri::AppHandle, state: State<AppState>, to: String, subject: String, body: String, invoice: Option<String>) -> R<()> {
+    let link = mail::mailto(&to, &subject, &body)?;
+    app.opener().open_url(link, None::<&str>).map_err(|e| e.to_string())?;
+    if let Some(name) = invoice {
+        let p = store::invoice_path(&data_dir(&state), &name)?;
+        if p.exists() {
+            app.opener().reveal_item_in_dir(p).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -271,6 +329,10 @@ pub fn run() {
             get_config,
             save_config,
             has_password,
+            has_smtp_password,
+            mail_test,
+            mail_send,
+            mail_open,
             test_connection,
             sync_now,
             db_list,

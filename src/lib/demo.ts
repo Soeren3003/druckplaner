@@ -6,9 +6,10 @@
  */
 import { documentLines, documentTotals } from "./calc";
 import { defaultSettings } from "./defaults";
+import { isoDate, safeFileName } from "./format";
 import type { Customer, FilamentUse, InvoiceRecord, PartLine, Project, ProjectStatus, Settings, WorkLine } from "./types";
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+const iso = isoDate;
 const daysAgo = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -95,6 +96,8 @@ interface Spec {
   due?: number;
   notes?: string;
   invoice?: "offen" | "bezahlt";
+  /** bereits gedruckte Stück je Druckteil */
+  printed?: number[];
 }
 
 const specs: Spec[] = [
@@ -107,10 +110,15 @@ const specs: Spec[] = [
   { ago: 75, customer: 6, description: "Pflanzenstecker mit Gravur", status: "bezahlt", parts: [[20, "Stecker", 4.1, 14, 3, "grün", 1]], shipping: 4.5, invoice: "bezahlt" },
   { ago: 45, customer: 5, description: "Gehäuse für Sensor", status: "geliefert", parts: [[10, "Gehäuse unten", 22.4, 64, 7, "schwarz", 2], [10, "Deckel", 11.8, 31, 7, "schwarz", 2]], work: [["Vorarbeiten / Konstruktion", 3, "h", 20], ["Nacharbeiten", 1, "h", 40]], shipping: 6.99, invoice: "offen" },
   { ago: 20, customer: 2, description: "Ersatz-Drehknöpfe Herd", status: "fertig", parts: [[4, "Drehknopf", 6.3, 29, 4, "schwarz", 1]], work: [["Nachvermessungen", 0.5, "h", 15]], due: -3 },
-  { ago: 12, customer: 3, description: "Dekofiguren Drache", status: "druck", parts: [[2, "Drache groß", 52.3, 395, 0, "grün", 0, [[0, "gelb", 8.1], [0, "schwarz", 4.3]]], [4, "Drache klein", 18.2, 112, 0, "violett", 0]], work: [["3D-Druck reinigen", 1, "h", 30]], due: 6, notes: "Stützen vorsichtig entfernen, Flügel dünn." },
+  { ago: 12, customer: 3, description: "Dekofiguren Drache", status: "druck", parts: [[2, "Drache groß", 52.3, 395, 0, "grün", 0, [[0, "gelb", 8.1], [0, "schwarz", 4.3]]], [4, "Drache klein", 18.2, 112, 0, "violett", 0]], work: [["3D-Druck reinigen", 1, "h", 30]], due: 6, notes: "Stützen vorsichtig entfernen, Flügel dünn.", printed: [1, 2] },
+  { ago: 9, customer: 5, description: "Kabeldurchführungen Werkstatt", status: "auftrag", parts: [[24, "Tülle 25 mm", 6.8, 22, 7, "schwarz", 2], [6, "Abdeckung", 14.5, 47, 7, "grau", 2]], due: 0 },
   { ago: 6, customer: 6, description: "Halter für Werkzeugwand", status: "auftrag", parts: [[8, "Hakenleiste", 31.5, 88, 2, "orange", 2]], due: 14 },
   { ago: 2, customer: 4, description: "Abdeckkappen Gartenzaun", status: "angebot", parts: [[40, "Kappe 40×40", 5.6, 18, 6, "schwarz", 1]], shipping: 4.5, due: 21 },
 ];
+
+/** Dateiname wie beim Erzeugen in der App */
+const pdfName = (number: string, label: string, p: Project) =>
+  `${safeFileName(`${number} ${label} ${customers.find((c) => c.id === p.customerId)?.name ?? ""} ${p.description}`)}.pdf`;
 
 function build() {
   const settings = demoSettings();
@@ -132,7 +140,7 @@ function build() {
       orderDate: date,
       dueDate: s.due !== undefined ? daysAgo(-s.due) : "",
       notes: s.notes ?? "",
-      parts: s.parts.map((x, j) => part(`proj-${i + 1}-p${j}`, x)),
+      parts: s.parts.map((x, j) => ({ ...part(`proj-${i + 1}-p${j}`, x), printed: s.printed?.[j] ?? 0 })),
       work: (s.work ?? []).map(([n, q, u, pr], j) => work(`proj-${i + 1}-w${j}`, n, q, u, pr)),
       packaging: settings.defaultPackaging,
       shipping: s.shipping ?? 0,
@@ -143,17 +151,20 @@ function build() {
     const invoices: InvoiceRecord[] = [];
     if (s.status === "angebot") {
       const lines = documentLines(p, settings, "einzeln");
-      invoices.push({ id: `${p.id}-a`, kind: "angebot", number: `A${year}-${String(++quoteNo).padStart(3, "0")}`, date, fileName: "", lines, ...documentTotals(lines, 0), paidAt: "" });
+      const number = `A${year}-${String(++quoteNo).padStart(3, "0")}`;
+      invoices.push({ id: `${p.id}-a`, kind: "angebot", number, date, fileName: pdfName(number, "Angebot", p), lines, ...documentTotals(lines, 0), paidAt: "", sentAt: stamp(date), sentTo: customers.find((c) => c.id === p.customerId)?.email });
     }
     if (s.invoice) {
       const d = daysAgo(Math.max(0, s.ago - 7));
       const lines = documentLines(p, settings, "einzeln");
+      const number = `R${d.slice(0, 4)}-${String(++invoiceNo).padStart(3, "0")}`;
       invoices.push({
         id: `${p.id}-r`,
         kind: "rechnung",
-        number: `R${d.slice(0, 4)}-${String(++invoiceNo).padStart(3, "0")}`,
+        number,
         date: d,
-        fileName: "",
+        fileName: pdfName(number, "Rechnung", p),
+        ...(s.invoice === "bezahlt" ? { sentAt: stamp(d), sentTo: customers.find((c) => c.id === p.customerId)?.email } : {}),
         lines,
         ...documentTotals(lines, 0),
         paidAt: s.invoice === "bezahlt" ? daysAgo(Math.max(0, s.ago - 12)) : "",

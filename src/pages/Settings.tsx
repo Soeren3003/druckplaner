@@ -4,7 +4,8 @@ import { api, inTauri, pickFolder } from "../lib/api";
 import { uid } from "../lib/defaults";
 import { dateTime, fixed, money } from "../lib/format";
 import { useStore } from "../lib/store";
-import type { LocalConfig, Material, Printer, Sender, Settings, TaxMode, WorkTemplate } from "../lib/types";
+import { PLACEHOLDERS } from "../lib/mailtext";
+import type { LocalConfig, Material, Printer, Sender, Settings, SmtpConfig, TaxMode, WorkTemplate } from "../lib/types";
 
 const TABS = [
   ["absender", "Absender"],
@@ -12,6 +13,7 @@ const TABS = [
   ["drucker", "Drucker & Strom"],
   ["filamente", "Filamente"],
   ["arbeit", "Arbeitspakete"],
+  ["email", "E-Mail"],
   ["sync", "Daten & Sync"],
 ] as const;
 
@@ -330,6 +332,7 @@ export default function SettingsPage({ tab: initial }: { tab?: string }) {
         </section>
       )}
 
+      {tab === "email" && <MailSettings />}
       {tab === "sync" && <SyncSettings />}
     </div>
   );
@@ -354,6 +357,165 @@ function ColorList({ colors, onChange }: { colors: string[]; onChange: (c: strin
   );
 }
 
+/** Häufige Anbieter; Angaben ohne Gewähr, bitte beim Anbieter prüfen. */
+const SMTP_PRESETS: { name: string; host: string; port: number; security: SmtpConfig["security"]; hint?: string }[] = [
+  { name: "IONOS", host: "smtp.ionos.de", port: 587, security: "starttls" },
+  { name: "GMX", host: "mail.gmx.net", port: 587, security: "starttls", hint: "Im GMX-Postfach unter Einstellungen „POP3/IMAP-Abruf“ bzw. „E-Mail-Programme“ erlauben." },
+  { name: "WEB.DE", host: "smtp.web.de", port: 587, security: "starttls", hint: "Im WEB.DE-Postfach den Zugriff über E-Mail-Programme erlauben." },
+  { name: "Gmail", host: "smtp.gmail.com", port: 587, security: "starttls", hint: "Gmail verlangt ein App-Passwort (Google-Konto → Sicherheit, 2-Faktor-Anmeldung nötig)." },
+  { name: "Posteo", host: "posteo.de", port: 587, security: "starttls" },
+  { name: "Strato", host: "smtp.strato.de", port: 465, security: "ssl" },
+  {
+    name: "Outlook.com / Hotmail",
+    host: "smtp-mail.outlook.com",
+    port: 587,
+    security: "starttls",
+    hint: "Microsoft lässt die Anmeldung per Passwort bei vielen Konten nicht mehr zu. Klappt der Test nicht, „Im Mailprogramm öffnen“ verwenden.",
+  },
+];
+
+function MailSettings() {
+  const store = useStore();
+  const s = store.settings;
+  const [cfg, setCfg] = useState<LocalConfig | null>(store.config);
+  const [password, setPassword] = useState("");
+  const [hasPw, setHasPw] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [hint, setHint] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api.hasSmtpPassword().then(setHasPw);
+  }, []);
+
+  if (!cfg) return null;
+  const m = cfg.smtp;
+  const setM = (patch: Partial<SmtpConfig>) => setCfg({ ...cfg, smtp: { ...m, ...patch } });
+  const setInv = (patch: Partial<Settings["invoice"]>) => store.saveSettings({ ...s, invoice: { ...s.invoice, ...patch } });
+  const dirty = JSON.stringify(cfg.smtp) !== JSON.stringify(store.config?.smtp) || password !== "";
+
+  const save = async () => {
+    // Datenordner und Sync aus dem aktuellen Stand übernehmen, nur die E-Mail-Einstellungen ändern
+    const next = { ...(store.config ?? cfg), smtp: cfg.smtp };
+    const keychain = await api.saveConfig(next, undefined, password || undefined);
+    store.setConfig(next);
+    if (password) setHasPw(true);
+    setPassword("");
+    setMsg({ ok: true, text: keychain ? "Gespeichert." : "Gespeichert. Hinweis: Kein Schlüsselbund verfügbar – Passwort liegt in der lokalen Konfigurationsdatei." });
+  };
+
+  const test = async () => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      if (dirty) await save();
+      setMsg({ ok: true, text: await api.mailTest() });
+    } catch (e) {
+      setMsg({ ok: false, text: String(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <section className="card">
+        <h2>Versand über SMTP</h2>
+        <p className="muted small">
+          Damit verschickt der Druckplaner Angebote und Rechnungen direkt mit dem PDF im Anhang. Die Zugangsdaten gelten nur für diesen Rechner und werden nicht
+          synchronisiert; das Passwort liegt im Schlüsselbund. Verbindungen sind immer verschlüsselt. Ohne SMTP lässt sich jede Mail auch im eigenen
+          Mailprogramm öffnen.
+        </p>
+        <label className="check">
+          <input type="checkbox" checked={m.enabled} onChange={(e) => setM({ enabled: e.target.checked })} />
+          Direkten Versand aktivieren
+        </label>
+        <div className="form-grid">
+          <Field label="Anbieter-Vorlage">
+            <select
+              value=""
+              onChange={(e) => {
+                const p = SMTP_PRESETS.find((x) => x.name === e.target.value);
+                if (p) {
+                  setM({ host: p.host, port: p.port, security: p.security });
+                  setHint(p.hint ?? "");
+                }
+              }}
+            >
+              <option value="">Übernehmen …</option>
+              {SMTP_PRESETS.map((p) => (
+                <option key={p.name}>{p.name}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="SMTP-Server">
+            <input value={m.host} placeholder="smtp.example.com" onChange={(e) => setM({ host: e.target.value.trim() })} />
+          </Field>
+          <Field label="Verschlüsselung">
+            <select value={m.security === "ssl" ? "ssl" : "starttls"} onChange={(e) => setM({ security: e.target.value as SmtpConfig["security"], port: 0 })}>
+              <option value="starttls">STARTTLS (meist Port 587)</option>
+              <option value="ssl">SSL/TLS (meist Port 465)</option>
+            </select>
+          </Field>
+          <Field label="Port" hint="leer = Standard">
+            <NumberInput value={m.port || null} allowEmpty digits={0} placeholder={m.security === "ssl" ? "465" : "587"} onChange={(v) => setM({ port: v ?? 0 })} />
+          </Field>
+          <Field label="Absendername">
+            <input value={m.fromName} placeholder={s.sender.name} onChange={(e) => setM({ fromName: e.target.value })} />
+          </Field>
+          <Field label="Absenderadresse">
+            <input type="email" value={m.fromAddress} placeholder={s.sender.email} onChange={(e) => setM({ fromAddress: e.target.value.trim() })} />
+          </Field>
+          <Field label="Benutzername" hint="leer = Absenderadresse">
+            <input value={m.username} onChange={(e) => setM({ username: e.target.value.trim() })} autoComplete="off" />
+          </Field>
+          <Field label="Passwort" hint={hasPw ? "Gespeichert im Schlüsselbund. Nur ausfüllen zum Ändern." : "Bei manchen Anbietern ein App-Passwort."}>
+            <input type="password" value={password} placeholder={hasPw ? "••••••••" : ""} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+          </Field>
+        </div>
+        <label className="check">
+          <input type="checkbox" checked={m.copyToSelf} onChange={(e) => setM({ copyToSelf: e.target.checked })} />
+          Blindkopie jeder Mail an mich (als Nachweis im eigenen Postfach)
+        </label>
+        {hint && <div className="alert">{hint}</div>}
+        {msg && <div className={`alert ${msg.ok ? "ok" : "error"}`}>{msg.text}</div>}
+        <div className="row">
+          <button className="primary" disabled={!dirty} onClick={() => save().catch((e) => setMsg({ ok: false, text: String(e) }))}>
+            Speichern
+          </button>
+          <button disabled={busy || !m.host || !m.fromAddress || !inTauri} onClick={test}>
+            {busy ? "Teste …" : "Verbindung testen"}
+          </button>
+        </div>
+      </section>
+      <section className="card">
+        <h2>Texte</h2>
+        <p className="muted small">
+          Platzhalter: {PLACEHOLDERS.map(([p, d]) => (
+            <span key={p} title={d}>
+              <code>{p}</code>{" "}
+            </span>
+          ))}
+        </p>
+        <div className="form-grid">
+          <Field label="Betreff Rechnung" wide>
+            <input value={s.invoice.mailSubjectInvoice} onChange={(e) => setInv({ mailSubjectInvoice: e.target.value })} />
+          </Field>
+          <Field label="Text Rechnung" wide>
+            <textarea rows={7} value={s.invoice.mailBodyInvoice} onChange={(e) => setInv({ mailBodyInvoice: e.target.value })} />
+          </Field>
+          <Field label="Betreff Angebot" wide>
+            <input value={s.invoice.mailSubjectQuote} onChange={(e) => setInv({ mailSubjectQuote: e.target.value })} />
+          </Field>
+          <Field label="Text Angebot" wide>
+            <textarea rows={7} value={s.invoice.mailBodyQuote} onChange={(e) => setInv({ mailBodyQuote: e.target.value })} />
+          </Field>
+        </div>
+      </section>
+    </>
+  );
+}
+
 function SyncSettings() {
   const store = useStore();
   const [cfg, setCfg] = useState<LocalConfig | null>(store.config);
@@ -369,12 +531,14 @@ function SyncSettings() {
   if (!cfg) return null;
   const w = cfg.webdav;
   const setW = (patch: Partial<LocalConfig["webdav"]>) => setCfg({ ...cfg, webdav: { ...w, ...patch } });
-  const dirty = JSON.stringify(cfg) !== JSON.stringify(store.config) || password !== "";
+  const dirty = JSON.stringify([cfg.dataDir, cfg.webdav]) !== JSON.stringify([store.config?.dataDir, store.config?.webdav]) || password !== "";
 
   const save = async () => {
-    const keychain = await api.saveConfig(cfg, password || undefined);
+    // nur Datenordner und Sync ändern, die E-Mail-Einstellungen bleiben, wie sie sind
+    const next = { ...(store.config ?? cfg), dataDir: cfg.dataDir, webdav: cfg.webdav };
+    const keychain = await api.saveConfig(next, password || undefined);
     const dataChanged = cfg.dataDir !== store.config?.dataDir;
-    store.setConfig(cfg);
+    store.setConfig(next);
     if (password) setHasPw(true);
     setPassword("");
     if (dataChanged) await store.reload();

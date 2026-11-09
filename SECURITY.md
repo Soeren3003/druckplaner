@@ -20,9 +20,9 @@ Sicherheitskorrekturen gibt es für die jeweils neueste Version.
 Der Druckplaner ist eine lokale Desktop-App. Daten können aber von außen hereinkommen: per Sync vom eigenen Server
 oder einem anderen Gerät, als 3MF-Datei aus dem Internet oder als Antwort eines Servers. Deshalb gilt:
 
-- **Keine Geheimnisse im Repository.** Zugangsdaten gibt es nur lokal. Das Nextcloud-App-Passwort liegt im
-  Schlüsselbund des Systems. Nur wenn keiner verfügbar ist, liegt es in `config.json`, und diese Datei ist dann nur
-  für den eigenen Benutzer lesbar. Zugangsdaten werden nie synchronisiert.
+- **Keine Geheimnisse im Repository.** Zugangsdaten gibt es nur lokal. Das Nextcloud-App-Passwort und das
+  SMTP-Passwort liegen im Schlüsselbund des Systems. Nur wenn keiner verfügbar ist, liegen sie in `config.json`, und
+  diese Datei ist nur für den eigenen Benutzer lesbar. Zugangsdaten werden nie synchronisiert.
 - **Strikte Content-Security-Policy:** Die Oberfläche lädt nur eigene Skripte und keine Inhalte aus dem Internet.
   Verbindungen laufen nur über die App selbst.
 - **Kein HTML aus fremden Daten:** Namen, Beschreibungen und Notizen werden immer als Text dargestellt.
@@ -39,4 +39,10 @@ oder einem anderen Gerät, als 3MF-Datei aus dem Internet oder als Antwort eines
     Dateien, Steuerzeichen), werden ignoriert.
   - Verbindungen laufen über HTTPS (rustls). Unverschlüsseltes `http` ist nur für den eigenen Rechner möglich,
     z. B. für Tests.
+- **E-Mail:**
+  - Versand nur verschlüsselt (STARTTLS oder SSL/TLS über rustls), nie im Klartext.
+  - Genau ein Empfänger pro Mail; die Adresse wird geprüft, Zeilenumbrüche im Betreff werden entfernt. So lassen
+    sich keine weiteren Empfänger oder Kopfzeilen einschleusen.
+  - Als Anhang kommen nur PDFs aus dem eigenen Rechnungsordner in Frage.
+  - `mailto:`-Links für das Mailprogramm werden vollständig kodiert.
 - **Abhängigkeiten** werden mit `npm audit` und `cargo audit` geprüft.
