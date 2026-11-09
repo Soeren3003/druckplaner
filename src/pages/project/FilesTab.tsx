@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Empty, Field, Modal } from "../../components/ui";
 import { api, confirmDialog, inTauri, onFileDrop, pickFiles } from "../../lib/api";
-import { newPart } from "../../lib/defaults";
+import { partsFromThreeMf } from "../../lib/threemf";
 import { bytes, dateTime, duration, num } from "../../lib/format";
 import { useStore } from "../../lib/store";
 import type { FileMeta, Project, ThreeMfInfo } from "../../lib/types";
@@ -68,19 +68,10 @@ export default function FilesTab({ project, update }: { project: Project; update
     }
   };
 
-  /** Legt je Druckplatte ein Druckteil mit Gewicht/Zeit aus dem Slicer an. */
+  /** Legt je Druckplatte ein Druckteil mit Druckzeit und einem Filament je Farbe aus dem Slicer an. */
   const takeOver = (name: string, i: ThreeMfInfo) => {
-    const printer = settings.printers.find((p) => i.printer && p.name.toLowerCase().includes(i.printer.toLowerCase().replace("bambu lab ", "")));
-    const parts = i.plates.map((pl) => ({
-      ...newPart(settings),
-      name: `${name.replace(/\.3mf$/i, "")}${i.plates.length > 1 ? ` – Platte ${pl.index}` : ""}`,
-      weight: Math.round(pl.weightG * 100) / 100,
-      minutes: Math.round(pl.printSeconds / 60),
-      color: pl.filaments.length === 1 ? pl.filaments[0].color : "",
-      printerId: printer?.id ?? settings.defaultPrinterId,
-      fileName: name,
-    }));
-    const empty = (p: Project["parts"][number]) => !p.name && !p.weight && !p.minutes;
+    const parts = partsFromThreeMf(settings, name, i);
+    const empty = (p: Project["parts"][number]) => !p.name && !p.minutes && p.filaments.every((f) => !f.weight);
     update({ parts: [...project.parts.filter((p) => !empty(p)), ...parts] });
   };
 
@@ -124,6 +115,7 @@ export default function FilesTab({ project, update }: { project: Project; update
                       {i.plates.map((p) => (
                         <span key={p.index} className="chip">
                           Platte {p.index}: {num(p.weightG, 1)} g · {duration(p.printSeconds / 60)} h
+                          {p.filaments.filter((x) => x.usedG > 0).length > 1 && <> · {p.filaments.filter((x) => x.usedG > 0).length} Filamente</>}
                         </span>
                       ))}
                       <button className="link small" onClick={() => takeOver(f.name, i)}>

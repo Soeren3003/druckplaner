@@ -85,19 +85,26 @@ export interface Customer {
   notes: string;
 }
 
-export interface PartLine {
+/** Ein Filament eines Druckteils; mehrfarbige Teile (z. B. mit AMS) haben mehrere. */
+export interface FilamentUse {
   id: string;
-  name: string;
-  quantity: number;
   /** Name des Filaments – als Kopie, damit spätere Preisänderungen alte Aufträge nicht verändern. */
   material: string;
   color: string;
   spoolWeight: number;
   spoolPrice: number;
   markupPercent: number;
-  /** Gewicht pro Stück in Gramm. */
+  /** Verbrauch pro Stück in Gramm. */
   weight: number;
-  /** Druckzeit pro Stück in Minuten (bei 100 % Geschwindigkeit). */
+}
+
+export interface PartLine {
+  id: string;
+  name: string;
+  quantity: number;
+  /** Mindestens ein Filament; bei mehrfarbigen Drucken mehrere mit eigenem Verbrauch. */
+  filaments: FilamentUse[];
+  /** Druckzeit pro Stück in Minuten (bei 100 % Geschwindigkeit), gilt für das ganze Teil. */
   minutes: number;
   printerId: string;
   fileName: string;

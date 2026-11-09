@@ -8,6 +8,26 @@ Die Versionsnummern folgen der [semantischen Versionierung](https://semver.org/l
 - **MINOR** steigt bei neuen Funktionen, die bestehende Daten weiter lesen können.
 - **PATCH** steigt bei Fehlerbehebungen und kleinen Verbesserungen ohne neue Funktion.
 
+## [1.1.0] – 2026-11-09
+
+Mehrfarbige Drucke.
+
+### Neu
+- **Mehrere Filamente je Druckteil bzw. Druckplatte**, z. B. für mehrfarbige Drucke mit dem AMS von Bambu Lab:
+  - Weitere Filamente kommen mit **＋** in der Zeile hinzu, jedes mit Material, Farbe und Verbrauch in Gramm pro Stück.
+  - Die Druckzeit bleibt eine Angabe pro Teil.
+  - Rollenpreis, Rolleninhalt und Aufschlag lassen sich in den Details je Filament anpassen, mit Kosten je Filament.
+- **Angebote und Rechnungen** führen bei mehrfarbigen Teilen unter der Position alle Filamente mit Farbe und
+  Verbrauch pro Stück auf.
+- **3MF-Übernahme:** Bei geslicten Bambu-/Orca-Dateien wird jedes Filament einer Platte mit Typ, Farbe und Gewicht
+  übernommen. Die Slicer-Farben werden in Farbnamen übersetzt, die Typen den eigenen Filamenten zugeordnet.
+- Die Übersicht „Filament nach Material“ zählt jedes Filament einzeln.
+
+### Umstellung
+- Bestehende Aufträge werden beim ersten Start automatisch umgestellt: Das bisherige Filament eines Teils wird zum
+  ersten Eintrag der Filamentliste. Beträge und Gewichte bleiben unverändert.
+- Beim Sync sollten alle Geräte auf 1.1 aktualisiert werden.
+
 ## [1.0.0] – 2026-11-07
 
 Erste veröffentlichte Version.

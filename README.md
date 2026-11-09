@@ -70,8 +70,11 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 
 ### Kalkulation
 
-- **Druckteile** mit Anzahl, Filament, Farbe, Gewicht und Druckzeit pro Stück sowie Drucker
-- Rollenpreis, Rolleninhalt und Filamentaufschlag je Teil. Die Werte werden beim Auswählen des Filaments
+- **Druckteile** mit Anzahl, Druckzeit pro Stück, Drucker und einem oder mehreren Filamenten
+- **Mehrfarbige Drucke** (z. B. mit dem AMS von Bambu Lab): Mit **＋** bekommt ein Druckteil bzw. eine Druckplatte
+  weitere Filamente, jedes mit eigenem Material, eigener Farbe und eigenem Verbrauch in Gramm. Die Druckzeit gilt
+  für das ganze Teil.
+- Rollenpreis, Rolleninhalt und Filamentaufschlag je Filament. Die Werte werden beim Auswählen des Filaments
   übernommen, **spätere Preisänderungen verändern alte Aufträge nicht**.
 - **Strom** aus der Leistung des Druckers und der Druckzeit, Strompreis global oder je Auftrag
 - **Verschleiß** pro Druckstunde (optional, je Drucker)
@@ -85,8 +88,8 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 - Dateien per **Drag & Drop** oder Dateidialog zum Auftrag hinzufügen (3MF, STL, STEP, SCAD, Bilder, PDF …)
 - Öffnen mit dem Standardprogramm, im Finder/Explorer zeigen, umbenennen, löschen
 - Bei **Bambu-Studio- und OrcaSlicer-3MF-Dateien** zeigt der Druckplaner das Vorschaubild an. Wurde die Datei nach
-  dem Slicen gespeichert, liest er **Gewicht und Druckzeit je Platte** aus und übernimmt sie auf Knopfdruck als
-  Druckteile.
+  dem Slicen gespeichert, liest er **Druckzeit und Verbrauch je Platte** aus und übernimmt sie auf Knopfdruck als
+  Druckteile. Bei mehrfarbigen Platten wird **jedes Filament mit Typ, Farbe und Gewicht** einzeln übernommen.
 
 ### Angebote und Rechnungen
 
@@ -94,6 +97,8 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
   Kundennummer, Positionen, Summe und Zahlungshinweis
 - Fortlaufende Nummern: Rechnungen `R2026-001`, Angebote `A2026-001` (Präfix einstellbar)
 - Positionen einzeln (Druckteile, Arbeit, Verpackung, Versand) oder als eine Pauschale
+- Bei **mehrfarbigen Druckteilen** stehen unter der Position alle Filamente mit Farbe und Verbrauch pro Stück,
+  z. B. „Drache groß (mehrfarbig, je Stück) – PLA, grün: 52,3 g – PLA, gelb: 8,1 g …“
 - Steuerhinweis wählbar: **Privatverkauf**, **Kleinunternehmer (§ 19 UStG)** oder **mit Umsatzsteuer**
 - Rechnungen als bezahlt markieren; das Datum fließt in die Übersicht ein
 - Texte für Einleitung, Grußformel und Hinweise in den Einstellungen anpassbar
@@ -120,13 +125,13 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 
 ## Screenshots
 
-| Auftrag mit Kalkulation | Angebote und Rechnungen |
+| Auftrag mit mehrfarbigem Druckteil | Angebote und Rechnungen |
 | --- | --- |
-| <img src="docs/screenshots/project.jpg" alt="Auftrag: Druckteile mit Filament, Gewicht, Druckzeit und Kosten, Zusammenfassung" width="440"> | <img src="docs/screenshots/documents.jpg" alt="Auftrag: Liste der Angebote und Rechnungen mit Bezahlt-Status" width="440"> |
+| <img src="docs/screenshots/project.jpg" alt="Auftrag: mehrfarbiges Druckteil mit drei Filamenten, Rollenpreise je Filament, Zusammenfassung" width="440"> | <img src="docs/screenshots/documents.jpg" alt="Auftrag: Liste der Angebote und Rechnungen mit Bezahlt-Status" width="440"> |
 | **Aufträge** | **Kunden** |
 | <img src="docs/screenshots/projects.jpg" alt="Auftragsliste mit Nummer, Kunde, Status, Rechnung und Betrag" width="440"> | <img src="docs/screenshots/customers.jpg" alt="Kunden mit Kundennummer, Anschrift und Aufträgen" width="440"> |
-| **Einstellungen: Filamente** | **Rechnung als PDF** |
-| <img src="docs/screenshots/settings.jpg" alt="Einstellungen: Filamente mit Rollenpreis, Inhalt, Aufschlag und Preis pro kg" width="440"> | <img src="docs/screenshots/invoice.jpg" alt="Beispielrechnung als PDF" width="300"> |
+| **Einstellungen: Filamente** | **Angebot als PDF, mit mehrfarbigem Druckteil** |
+| <img src="docs/screenshots/settings.jpg" alt="Einstellungen: Filamente mit Rollenpreis, Inhalt, Aufschlag und Preis pro kg" width="440"> | <img src="docs/screenshots/invoice.jpg" alt="Beispielangebot als PDF mit einem mehrfarbigen Druckteil und seinen Filamenten" width="300"> |
 
 Personen, Firmen, Adressen, Aufträge und Beträge in den Bildern sind erfunden.
 
@@ -176,18 +181,20 @@ Für jedes Druckteil gilt (Gewicht und Druckzeit pro Stück):
 
 | Anteil | Formel |
 | --- | --- |
-| Preis pro Gramm | Rollenpreis × (1 + Aufschlag) ÷ Rolleninhalt |
-| Filament | Preis pro Gramm × Gewicht × Anzahl |
+| Preis pro Gramm | Rollenpreis × (1 + Aufschlag) ÷ Rolleninhalt, je Filament |
+| Filament | Summe über alle Filamente: Preis pro Gramm × Gewicht × Anzahl |
 | Strom | Leistung des Druckers (kW) × Druckzeit (h) × Anzahl × Strompreis |
 | Verschleiß | Verschleiß pro Stunde × Druckzeit (h) × Anzahl |
 
 Dazu kommen Arbeitspakete (Anzahl × Preis), Verpackung und Versand, abzüglich Nachlass. Bei „mit Umsatzsteuer“
 wird der Steuersatz aufgeschlagen.
 
-**Beispiel** (aus dem Screenshot oben): 2 × „Drache groß“, je 64,70 g und 6:35 h, PLA zu 22,99 € je 1000-g-Rolle
-mit 10 % Aufschlag, Bambu Lab A1 mini mit 150 W, Strom 0,30 €/kWh, Verschleiß 0,10 €/h:
+**Beispiel** (aus dem Screenshot oben): 2 × „Drache groß“, mehrfarbig mit 52,30 g grünem, 8,10 g gelbem und
+4,30 g schwarzem PLA (zusammen 64,70 g) und 6:35 h Druckzeit je Stück. Alle drei Rollen kosten 22,99 € je 1000 g bei
+10 % Aufschlag. Gedruckt wird auf einem Bambu Lab A1 mini mit 150 W, Strom 0,30 €/kWh, Verschleiß 0,10 €/h:
 
-- Preis pro Gramm: 22,99 € × 1,10 ÷ 1000 g = 0,0253 € → **Filament 3,27 €**
+- Preis pro Gramm: 22,99 € × 1,10 ÷ 1000 g = 0,0253 €
+- Filament: grün 2 × 52,30 g = 2,65 €, gelb 2 × 8,10 g = 0,41 €, schwarz 2 × 4,30 g = 0,22 € → **Filament 3,27 €**
 - Druckzeit 2 × 6:35 h = 13,17 h → 0,15 kW × 13,17 h = 1,98 kWh → **Strom 0,59 €**
 - **Verschleiß** 0,10 €/h × 13,17 h = **1,32 €**
 - **Teil gesamt 5,18 €**
@@ -395,6 +402,10 @@ Tauri-Updates behoben.
 - Gewicht und Druckzeit lassen sich nur aus 3MF-Dateien von Bambu Studio und OrcaSlicer lesen, und nur, wenn die
   Datei nach dem Slicen gespeichert wurde. Aus STL-Dateien werden keine Werte gelesen.
 - Ein eigenes Logo auf Rechnungen ist noch nicht möglich.
+- Bei mehrfarbigen Drucken wird der Abfall beim Farbwechsel (Purge, Prime Tower) nicht gesondert erfasst. Er steckt
+  im Verbrauch, den der Slicer je Filament angibt, oder lässt sich über den Filamentaufschlag berücksichtigen.
+- Beim Sync sollten alle Geräte dieselbe Version nutzen. Ab Version 1.1 speichert der Druckplaner mehrere Filamente
+  je Druckteil, ältere Versionen zeigen diese Aufträge nicht richtig an.
 
 ## Entstanden mit KI
 

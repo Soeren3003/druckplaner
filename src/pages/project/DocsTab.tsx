@@ -174,7 +174,7 @@ export default function DocsTab({ project, update }: { project: Project; update:
             <tbody>
               {preview.map((l, i) => (
                 <tr key={i} className="static">
-                  <td>{l.description}</td>
+                  <td className="pre-line">{l.description}</td>
                   <td className="r nowrap">
                     {l.quantity} {l.unit}
                   </td>

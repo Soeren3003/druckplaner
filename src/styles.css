@@ -92,6 +92,9 @@ h2 {
 .nowrap {
   white-space: nowrap;
 }
+.pre-line {
+  white-space: pre-line;
+}
 .row {
   display: flex;
   gap: 8px;
@@ -540,7 +543,7 @@ table.edit.fixed {
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
   gap: 10px;
   background: var(--bg);
   border-radius: 8px;
@@ -555,6 +558,32 @@ table.edit.fixed {
 }
 .detail-info {
   grid-column: 1 / -1;
+}
+.w-act3 {
+  width: 88px;
+}
+table.edit tr.multi td {
+  padding-bottom: 2px;
+}
+table.edit tr.sub td {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+table.edit tr.sub.last td {
+  padding-bottom: 8px;
+}
+table.edit tr.sub td.r.muted {
+  padding-right: 10px;
+}
+.detail-grid .filament-prices {
+  grid-column: 1 / -1;
+}
+.filament-prices th {
+  padding: 2px 4px;
+}
+.filament-prices td {
+  padding: 2px 4px;
+  border-bottom: 0;
 }
 
 /* ---------- Badges ---------- */

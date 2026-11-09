@@ -1,6 +1,6 @@
 [package]
 name = "druckplaner"
-version = "1.0.0"
+version = "1.1.0"
 description = "Projekt- und Kostenplanung für 3D-Druckaufträge"
 license = "MIT"
 authors = ["Soeren3003"]

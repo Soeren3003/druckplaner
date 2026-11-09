@@ -1,5 +1,5 @@
 import { nextCustomerNumber, nextProjectNumber } from "./numbering";
-import type { Customer, PartLine, Project, Settings, WorkLine } from "./types";
+import type { Customer, FilamentUse, PartLine, Project, Settings, WorkLine } from "./types";
 
 export const uid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
@@ -87,18 +87,26 @@ export function newCustomer(existingNumbers: string[]): Customer {
   return { id: uid(), createdAt: t, updatedAt: t, number: nextCustomerNumber(existingNumbers), name: "", company: "", street: "", zip: "", city: "", country: "", email: "", phone: "", notes: "" };
 }
 
+/** Filament mit den Werten aus den Einstellungen (erstes Filament, falls kein Name passt). */
+export function newFilament(settings: Settings, material?: string, color = "", weight = 0): FilamentUse {
+  const m = settings.materials.find((x) => x.name === material) ?? settings.materials[0];
+  return {
+    id: uid(),
+    material: material ?? m?.name ?? "",
+    color,
+    spoolWeight: m?.spoolWeight ?? 1000,
+    spoolPrice: m?.spoolPrice ?? 0,
+    markupPercent: m?.markupPercent ?? 0,
+    weight,
+  };
+}
+
 export function newPart(settings: Settings): PartLine {
-  const m = settings.materials[0];
   return {
     id: uid(),
     name: "",
     quantity: 1,
-    material: m?.name ?? "",
-    color: "",
-    spoolWeight: m?.spoolWeight ?? 1000,
-    spoolPrice: m?.spoolPrice ?? 0,
-    markupPercent: m?.markupPercent ?? 0,
-    weight: 0,
+    filaments: [newFilament(settings)],
     minutes: 0,
     printerId: settings.defaultPrinterId || settings.printers[0]?.id || "",
     fileName: "",
@@ -134,9 +142,21 @@ export function newProject(settings: Settings, customerId = "", existingNumbers:
   };
 }
 
+type LegacyPart = Partial<PartLine> & Partial<Omit<FilamentUse, "id">>;
+
+/** Druckteile aus Version 1.0 hatten genau ein Filament direkt am Teil. */
+export function migratePart(p: LegacyPart): PartLine {
+  const { material, color, spoolWeight, spoolPrice, markupPercent, weight, ...rest } = p;
+  const filaments = p.filaments?.length
+    ? p.filaments
+    : [{ id: `${p.id ?? uid()}-f0`, material: material ?? "", color: color ?? "", spoolWeight: spoolWeight ?? 1000, spoolPrice: spoolPrice ?? 0, markupPercent: markupPercent ?? 0, weight: weight ?? 0 }];
+  return { id: uid(), name: "", quantity: 1, minutes: 0, printerId: "", fileName: "", ...rest, filaments } as PartLine;
+}
+
 export function migrateProject(p: Partial<Project>): Project {
   const base: Partial<Project> = { invoices: [], work: [], parts: [], discount: 0, electricityPrice: null, notes: "", dueDate: "", number: "" };
-  return { ...base, ...p } as Project;
+  const merged = { ...base, ...p } as Project;
+  return { ...merged, parts: (merged.parts as LegacyPart[]).map(migratePart) };
 }
 
 export const STATUS: { id: Project["status"]; label: string; color: string }[] = [

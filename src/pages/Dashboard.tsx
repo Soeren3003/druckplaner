@@ -92,7 +92,12 @@ export default function Dashboard({ nav, onNew }: { nav: Nav; onNew: () => void 
 
   // Filament nach Material
   const byMaterial = new Map<string, number>();
-  for (const { p } of inPeriod) for (const part of p.parts) byMaterial.set(part.material || "Unbekannt", (byMaterial.get(part.material || "Unbekannt") ?? 0) + part.weight * part.quantity);
+  for (const { p } of inPeriod)
+    for (const part of p.parts)
+      for (const f of part.filaments) {
+        const key = f.material || "Unbekannt";
+        byMaterial.set(key, (byMaterial.get(key) ?? 0) + f.weight * part.quantity);
+      }
   let materials = [...byMaterial.entries()].map(([label, value]) => ({ label, value })).filter((x) => x.value > 0).sort((a, b) => b.value - a.value);
   if (materials.length > 6) {
     const rest = materials.slice(5).reduce((s, x) => s + x.value, 0);

@@ -6,7 +6,7 @@
  */
 import { documentLines, documentTotals } from "./calc";
 import { defaultSettings } from "./defaults";
-import type { Customer, InvoiceRecord, PartLine, Project, ProjectStatus, Settings, WorkLine } from "./types";
+import type { Customer, FilamentUse, InvoiceRecord, PartLine, Project, ProjectStatus, Settings, WorkLine } from "./types";
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const daysAgo = (n: number) => {
@@ -65,24 +65,22 @@ const customers: Customer[] = people.map(([name, street, zip, city, notes], i) =
   notes,
 }));
 
-type P = [number, string, number, number, number, string?, number?];
-const part = (id: string, [qty, name, weight, minutes, mat, color = "schwarz", printer = 0]: P): PartLine => {
+/** [Filament-Index, Farbe, Gramm pro Stück] für weitere Filamente eines mehrfarbigen Teils */
+type Extra = [number, string, number];
+type P = [number, string, number, number, number, string?, number?, Extra[]?];
+const filament = (id: string, mat: number, color: string, weight: number): FilamentUse => {
   const m = demoSettings().materials[mat];
-  return {
-    id,
-    name,
-    quantity: qty,
-    material: m.name,
-    color,
-    spoolWeight: m.spoolWeight,
-    spoolPrice: m.spoolPrice,
-    markupPercent: m.markupPercent,
-    weight,
-    minutes,
-    printerId: `printer-${printer}`,
-    fileName: "",
-  };
+  return { id, material: m.name, color, spoolWeight: m.spoolWeight, spoolPrice: m.spoolPrice, markupPercent: m.markupPercent, weight };
 };
+const part = (id: string, [qty, name, weight, minutes, mat, color = "schwarz", printer = 0, extra = []]: P): PartLine => ({
+  id,
+  name,
+  quantity: qty,
+  filaments: [filament(`${id}-f0`, mat, color, weight), ...extra.map(([m, c, w], i) => filament(`${id}-f${i + 1}`, m, c, w))],
+  minutes,
+  printerId: `printer-${printer}`,
+  fileName: "",
+});
 const work = (id: string, name: string, quantity: number, unit: string, unitPrice: number): WorkLine => ({ id, name, quantity, unit, unitPrice });
 
 interface Spec {
@@ -103,13 +101,13 @@ const specs: Spec[] = [
   { ago: 320, customer: 1, description: "Ersatzteile Geschirrspüler", status: "bezahlt", parts: [[4, "Rollenhalter", 9.6, 38, 2, "weiß", 1]], work: [["Nachvermessungen", 0.5, "h", 15]], invoice: "bezahlt" },
   { ago: 280, customer: 2, description: "Kabelkanal-Clips", status: "bezahlt", parts: [[30, "Clip 12 mm", 1.8, 6, 1, "grau", 1]], invoice: "bezahlt" },
   { ago: 240, customer: 5, description: "Halterungen für Werkbank", status: "bezahlt", parts: [[6, "Wandhalter Akkuschrauber", 48.5, 142, 6, "schwarz", 2], [6, "Bithalter", 12.2, 35, 6, "orange", 2]], work: [["Vorarbeiten / Konstruktion", 2, "h", 20]], shipping: 6.99, invoice: "bezahlt" },
-  { ago: 200, customer: 3, description: "Schlüsselanhänger Vereinsfest", status: "bezahlt", parts: [[12, "Anhänger mit Logo", 7.9, 33, 1, "mehrfarbig"]], work: [["Vorarbeiten / Konstruktion", 1, "h", 20]], discount: 5, invoice: "bezahlt", notes: "Logo als SVG erhalten, Farben laut Liste." },
+  { ago: 200, customer: 3, description: "Schlüsselanhänger Vereinsfest", status: "bezahlt", parts: [[12, "Anhänger mit Logo", 5.2, 41, 1, "weiß", 0, [[1, "blau", 2.7]]]], work: [["Vorarbeiten / Konstruktion", 1, "h", 20]], discount: 5, invoice: "bezahlt", notes: "Logo als SVG erhalten, Farben laut Liste." },
   { ago: 150, customer: 4, description: "Fahrradhalter Garage", status: "bezahlt", parts: [[2, "Wandhaken", 86.0, 260, 2, "schwarz", 2]], invoice: "bezahlt" },
   { ago: 110, customer: 1, description: "Brettspiel-Organizer", status: "bezahlt", parts: [[1, "Einsatz Spielfiguren", 142.3, 410, 0, "blau", 3], [1, "Einsatz Karten", 96.4, 275, 0, "gelb", 3]], work: [["Nachvermessungen", 1, "h", 15]], invoice: "bezahlt" },
   { ago: 75, customer: 6, description: "Pflanzenstecker mit Gravur", status: "bezahlt", parts: [[20, "Stecker", 4.1, 14, 3, "grün", 1]], shipping: 4.5, invoice: "bezahlt" },
   { ago: 45, customer: 5, description: "Gehäuse für Sensor", status: "geliefert", parts: [[10, "Gehäuse unten", 22.4, 64, 7, "schwarz", 2], [10, "Deckel", 11.8, 31, 7, "schwarz", 2]], work: [["Vorarbeiten / Konstruktion", 3, "h", 20], ["Nacharbeiten", 1, "h", 40]], shipping: 6.99, invoice: "offen" },
   { ago: 20, customer: 2, description: "Ersatz-Drehknöpfe Herd", status: "fertig", parts: [[4, "Drehknopf", 6.3, 29, 4, "schwarz", 1]], work: [["Nachvermessungen", 0.5, "h", 15]], due: -3 },
-  { ago: 12, customer: 3, description: "Dekofiguren Drache", status: "druck", parts: [[2, "Drache groß", 64.7, 395, 0, "grün", 0], [4, "Drache klein", 18.2, 112, 0, "violett", 0]], work: [["3D-Druck reinigen", 1, "h", 30]], due: 6, notes: "Stützen vorsichtig entfernen, Flügel dünn." },
+  { ago: 12, customer: 3, description: "Dekofiguren Drache", status: "druck", parts: [[2, "Drache groß", 52.3, 395, 0, "grün", 0, [[0, "gelb", 8.1], [0, "schwarz", 4.3]]], [4, "Drache klein", 18.2, 112, 0, "violett", 0]], work: [["3D-Druck reinigen", 1, "h", 30]], due: 6, notes: "Stützen vorsichtig entfernen, Flügel dünn." },
   { ago: 6, customer: 6, description: "Halter für Werkzeugwand", status: "auftrag", parts: [[8, "Hakenleiste", 31.5, 88, 2, "orange", 2]], due: 14 },
   { ago: 2, customer: 4, description: "Abdeckkappen Gartenzaun", status: "angebot", parts: [[40, "Kappe 40×40", 5.6, 18, 6, "schwarz", 1]], shipping: 4.5, due: 21 },
 ];
