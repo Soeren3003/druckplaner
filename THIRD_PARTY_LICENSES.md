@@ -12,11 +12,11 @@ Diese Datei wird mit `npm run licenses` erzeugt – bitte nicht von Hand bearbei
 
 ## Übersicht
 
-31 npm-Pakete (Oberfläche) und 473 Rust-Crates (Desktop-Hülle).
+31 npm-Pakete (Oberfläche) und 474 Rust-Crates (Desktop-Hülle).
 
 | Lizenz | Anzahl |
 | --- | --- |
-| MIT OR Apache-2.0 | 241 |
+| MIT OR Apache-2.0 | 242 |
 | MIT | 136 |
 | Apache-2.0 OR MIT | 46 |
 | Unicode-3.0 | 18 |
@@ -11848,7 +11848,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-### rustix 1.1.5
+### rustix 1.1.6
 
 - Lizenz: Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
 - Quelle: https://github.com/bytecodealliance/rustix
@@ -17374,6 +17374,36 @@ MIT License
 ```
 
 ### windows-sys 0.52.0
+
+- Lizenz: MIT OR Apache-2.0
+- Quelle: https://github.com/microsoft/windows-rs
+- Art: Rust-Crate
+
+```text
+MIT License
+
+    Copyright (c) Microsoft Corporation.
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE
+```
+
+### windows-sys 0.59.0
 
 - Lizenz: MIT OR Apache-2.0
 - Quelle: https://github.com/microsoft/windows-rs

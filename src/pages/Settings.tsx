@@ -5,7 +5,8 @@ import { uid } from "../lib/defaults";
 import { dateTime, fixed, money } from "../lib/format";
 import { useStore } from "../lib/store";
 import { PLACEHOLDERS } from "../lib/mailtext";
-import type { LocalConfig, Material, Printer, Sender, Settings, SmtpConfig, TaxMode, WorkTemplate } from "../lib/types";
+import { refreshSlicer, useSlicer } from "../lib/slicer";
+import type { LocalConfig, Material, Printer, Sender, Settings, SlicerKind, SmtpConfig, TaxMode, WorkTemplate } from "../lib/types";
 
 const TABS = [
   ["absender", "Absender"],
@@ -233,6 +234,7 @@ export default function SettingsPage({ tab: initial }: { tab?: string }) {
 
       {tab === "drucker" && (
         <>
+          <SlicerSetting />
           <section className="card">
             <h2>Strom</h2>
             <div className="form-grid">
@@ -373,6 +375,44 @@ const SMTP_PRESETS: { name: string; host: string; port: number; security: SmtpCo
     hint: "Microsoft lässt die Anmeldung per Passwort bei vielen Konten nicht mehr zu. Klappt der Test nicht, „Im Mailprogramm öffnen“ verwenden.",
   },
 ];
+
+/** Slicer zum Öffnen von Druckdateien – je Rechner (lokale Konfiguration). */
+function SlicerSetting() {
+  const store = useStore();
+  const info = useSlicer();
+  const [current, setCurrent] = useState<SlicerKind>((store.config?.slicer || "bambu") as SlicerKind);
+  const [shown, setShown] = useState(info);
+  useEffect(() => setShown(info), [info]);
+
+  const choose = async (slicer: SlicerKind) => {
+    setCurrent(slicer);
+    const next = { ...(store.config as LocalConfig), slicer };
+    await api.saveConfig(next);
+    store.setConfig(next);
+    refreshSlicer();
+    setShown(await api.slicerInfo());
+  };
+
+  return (
+    <section className="card">
+      <h2>Slicer</h2>
+      <p className="muted small">
+        3MF-, STL- und STEP-Dateien lassen sich in der Dateiliste eines Auftrags und in der Druckwarteschlange direkt im Slicer öffnen. Die Auswahl gilt nur
+        für diesen Rechner.
+      </p>
+      <div className="row">
+        <select value={current} onChange={(e) => choose(e.target.value as SlicerKind)} style={{ maxWidth: 260 }}>
+          <option value="bambu">Bambu Studio</option>
+          <option value="orca">OrcaSlicer</option>
+          <option value="prusa">PrusaSlicer</option>
+        </select>
+        {inTauri && (
+          <span className={`small ${shown.available ? "" : "late-text"}`}>{shown.available ? `✓ ${shown.name} gefunden` : `${shown.name} wurde nicht gefunden`}</span>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function MailSettings() {
   const store = useStore();

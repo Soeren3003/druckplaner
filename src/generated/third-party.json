@@ -2137,7 +2137,7 @@
  {
   "kind": "crate",
   "name": "rustix",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
   "url": "https://github.com/bytecodealliance/rustix"
  },
@@ -3286,6 +3286,13 @@
   "kind": "crate",
   "name": "windows-sys",
   "version": "0.52.0",
+  "license": "MIT OR Apache-2.0",
+  "url": "https://github.com/microsoft/windows-rs"
+ },
+ {
+  "kind": "crate",
+  "name": "windows-sys",
+  "version": "0.59.0",
   "license": "MIT OR Apache-2.0",
   "url": "https://github.com/microsoft/windows-rs"
  },

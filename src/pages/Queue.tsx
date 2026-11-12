@@ -3,11 +3,14 @@ import type { Nav } from "../App";
 import { Badge, Empty, NumberInput } from "../components/ui";
 import { date, duration, num } from "../lib/format";
 import { projectLabel } from "../lib/numbering";
-import { buildQueue, rankPatches, setPrinted, type QueueEntry } from "../lib/queue";
+import { buildQueue, printAsProject, printFromProject, rankPatches, setPrinted, type QueueEntry } from "../lib/queue";
+import { PrivatePrintDialog } from "../components/PrivatePrintDialog";
+import { api } from "../lib/api";
+import { isModelFile, useSlicer } from "../lib/slicer";
 import { useStore } from "../lib/store";
 import { colorCss } from "../lib/threemf";
-import { statusInfo } from "../lib/defaults";
-import type { Project } from "../lib/types";
+import { newPrivatePrint, statusInfo } from "../lib/defaults";
+import type { PrivatePrint, Project } from "../lib/types";
 
 function daysUntil(iso: string) {
   const d = Math.round((new Date(`${iso}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86_400_000);
@@ -38,21 +41,30 @@ function Filaments({ e }: { e: QueueEntry }) {
 
 export default function Queue({ nav }: { nav: Nav }) {
   const store = useStore();
-  const { projects, customers, settings } = store;
+  const { projects, customers, settings, prints } = store;
   const [printer, setPrinter] = useState("");
   const [showDone, setShowDone] = useState(false);
-  const q = buildQueue(projects, customers, settings, { printerId: printer, includeDone: showDone });
+  const [editing, setEditing] = useState<{ print: PrivatePrint; isNew: boolean } | null>(null);
+  const [error, setError] = useState("");
+  const slicer = useSlicer();
+  const q = buildQueue(projects, customers, settings, { printerId: printer, includeDone: showDone }, prints);
   const printerName = (id: string) => settings.printers.find((p) => p.id === id)?.name ?? "ohne Drucker";
   const totalMinutes = q.open.reduce((s, e) => s + e.minutes, 0);
   const late = q.open.filter((e) => e.late).length;
 
-  const saveProjects = (changed: Project[]) => changed.forEach((p) => store.saveProject(p));
+  /** Aufträge normal speichern, private Drucke in ihren eigenen Datensatz zurückschreiben. */
+  const saveProjects = (changed: Project[]) =>
+    changed.forEach((p) => {
+      const priv = prints.find((x) => x.id === p.id);
+      if (priv) store.savePrint(printFromProject(priv, p));
+      else store.saveProject(p);
+    });
 
   const print = (e: QueueEntry, printed: number) => saveProjects([setPrinted(e.project, e.part.id, printed)]);
 
   /** Verschieben gilt für die ganze Warteschlange (auch bei gefilterter Ansicht). */
   const move = (e: QueueEntry, dir: -1 | 1) => {
-    const full = buildQueue(projects, customers, settings).open;
+    const full = buildQueue(projects, customers, settings, {}, prints).open;
     const from = full.findIndex((x) => x.key === e.key);
     let to = from + dir;
     // bei gefiltertem Drucker am nächsten sichtbaren Eintrag vorbeischieben
@@ -60,7 +72,7 @@ export default function Queue({ nav }: { nav: Nav }) {
     if (from < 0 || to < 0 || to >= full.length) return;
     const patches = rankPatches(full, from, to);
     const changed: Project[] = [];
-    for (const p of projects) {
+    for (const p of [...projects, ...prints.map(printAsProject)]) {
       const mine = patches.filter((r) => r.projectId === p.id);
       if (mine.length) changed.push({ ...p, parts: p.parts.map((x) => ({ ...x, queueRank: mine.find((r) => r.partId === x.id)?.rank ?? x.queueRank })) });
     }
@@ -72,9 +84,12 @@ export default function Queue({ nav }: { nav: Nav }) {
       .filter((p) => p.parts.some((x) => x.queueRank !== undefined))
       .map((p) => ({ ...p, parts: p.parts.map(({ queueRank: _, ...x }) => x) }));
     saveProjects(changed);
+    prints.filter((p) => p.queueRank !== undefined).forEach(({ queueRank: _, ...p }) => store.savePrint(p));
   };
 
-  const manual = projects.some((p) => p.parts.some((x) => x.queueRank !== undefined));
+  const manual = projects.some((p) => p.parts.some((x) => x.queueRank !== undefined)) || prints.some((p) => p.queueRank !== undefined);
+
+  const openInSlicer = (e: QueueEntry) => api.filesOpenSlicer(e.project.id, e.part.fileName).catch((err) => setError(String(err)));
 
   const row = (e: QueueEntry, i: number) => {
     const s = statusInfo(e.project.status);
@@ -92,17 +107,34 @@ export default function Queue({ nav }: { nav: Nav }) {
           )}
         </td>
         <td>
-          <div className="q-part">{e.part.name || "Druckteil"}</div>
+          <div className="q-part">
+            {e.private ? (
+              <button className="link q-part-link" onClick={() => setEditing({ print: e.private!, isNew: false })} title="Privaten Druck bearbeiten">
+                {e.part.name || "Privater Druck"}
+              </button>
+            ) : (
+              e.part.name || "Druckteil"
+            )}
+          </div>
           <Filaments e={e} />
         </td>
         <td>
-          <button className="link" onClick={() => nav({ page: "project", id: e.project.id, tab: "kalkulation" })}>
-            {e.project.number}
-          </button>{" "}
-          <Badge color={s.color}>{s.label}</Badge>
-          <div className="small">
-            {e.customer?.name ?? "–"} <span className="muted">· {projectLabel(e.project)}</span>
-          </div>
+          {e.private ? (
+            <>
+              <Badge color="gray">Privat</Badge>
+              {e.private.notes && <div className="small muted">{e.private.notes}</div>}
+            </>
+          ) : (
+            <>
+              <button className="link" onClick={() => nav({ page: "project", id: e.project.id, tab: "kalkulation" })}>
+                {e.project.number}
+              </button>{" "}
+              <Badge color={s.color}>{s.label}</Badge>
+              <div className="small">
+                {e.customer?.name ?? "–"} <span className="muted">· {projectLabel(e.project)}</span>
+              </div>
+            </>
+          )}
         </td>
         {!printer && <td className="small">{printerName(e.printerId)}</td>}
         <td className="r nowrap">
@@ -123,6 +155,16 @@ export default function Queue({ nav }: { nav: Nav }) {
           )}
         </td>
         <td className="r nowrap q-actions">
+          {e.part.fileName && isModelFile(e.part.fileName) && (
+            <button
+              className="icon slicer-icon"
+              onClick={() => openInSlicer(e)}
+              disabled={!slicer.available}
+              title={slicer.available ? `${e.part.fileName} in ${slicer.name} öffnen` : `${slicer.name} wurde nicht gefunden`}
+            >
+              ▶
+            </button>
+          )}
           {e.done ? (
             <button className="ghost small" onClick={() => print(e, e.part.quantity - 1)} title="Ein Stück wieder offen">
               ↶
@@ -158,6 +200,9 @@ export default function Queue({ nav }: { nav: Nav }) {
       <header className="page-head">
         <h1>Druckwarteschlange</h1>
         <div className="toolbar">
+          <button className="primary" onClick={() => setEditing({ print: newPrivatePrint(settings), isNew: true })} title="Eigenen Druck ohne Auftrag hinzufügen">
+            + Privater Druck
+          </button>
           <select value={printer} onChange={(e) => setPrinter(e.target.value)}>
             <option value="">Alle Drucker</option>
             {settings.printers.map((p) => (
@@ -199,12 +244,20 @@ export default function Queue({ nav }: { nav: Nav }) {
         </div>
       </div>
 
+      {error && (
+        <div className="alert error">
+          {error}{" "}
+          <button className="icon" onClick={() => setError("")}>
+            ×
+          </button>
+        </div>
+      )}
       <section className="card">
         <div className="card-head">
           <div>
             <h2>Als Nächstes drucken</h2>
             <span className="muted small">
-              Aufträge mit Status „Beauftragt“ und „Im Druck“ · Reihenfolge nach Liefertermin{manual ? ", eigene Reihenfolge per ↑↓" : ", per ↑↓ änderbar"}
+              Aufträge mit Status „Beauftragt“ und „Im Druck“ sowie private Drucke · Reihenfolge nach Termin{manual ? ", eigene Reihenfolge per ↑↓" : ", per ↑↓ änderbar"}
             </span>
           </div>
           <div className="row">
@@ -221,7 +274,7 @@ export default function Queue({ nav }: { nav: Nav }) {
         </div>
         {q.open.length === 0 && q.done.length === 0 ? (
           <Empty>
-            Nichts zu drucken. Aufträge erscheinen hier, sobald ihr Status auf „Beauftragt“ steht.
+            Nichts zu drucken. Aufträge erscheinen hier, sobald ihr Status auf „Beauftragt“ steht – eigene Drucke über „+ Privater Druck“.
           </Empty>
         ) : (
           <table className="list queue">
@@ -245,6 +298,7 @@ export default function Queue({ nav }: { nav: Nav }) {
           </table>
         )}
       </section>
+      {editing && <PrivatePrintDialog initial={editing.print} isNew={editing.isNew} onClose={() => setEditing(null)} />}
     </div>
   );
 }

@@ -7,7 +7,7 @@
 import { documentLines, documentTotals } from "./calc";
 import { defaultSettings } from "./defaults";
 import { isoDate, safeFileName } from "./format";
-import type { Customer, FilamentUse, InvoiceRecord, PartLine, Project, ProjectStatus, Settings, WorkLine } from "./types";
+import type { Customer, FilamentUse, InvoiceRecord, PartLine, PrivatePrint, Project, ProjectStatus, Settings, WorkLine } from "./types";
 
 const iso = isoDate;
 const daysAgo = (n: number) => {
@@ -180,7 +180,38 @@ function build() {
     perYear.set(y, n);
     p.number = `${y}-${String(n).padStart(3, "0")}`;
   }
-  return { settings, customers, projects };
+  // Private Drucke: nur für die Warteschlange, ohne Auftrag
+  const prints: PrivatePrint[] = [
+    {
+      id: "print-1",
+      createdAt: stamp(daysAgo(3)),
+      updatedAt: stamp(daysAgo(3)),
+      name: "Ersatzknopf Spülmaschine",
+      quantity: 1,
+      printed: 0,
+      minutes: 48,
+      printerId: "printer-0",
+      filaments: [filament("print-1-f0", 2, "weiß", 7.4)],
+      dueDate: daysAgo(-2),
+      notes: "Für zu Hause",
+      fileName: "",
+    },
+    {
+      id: "print-2",
+      createdAt: stamp(daysAgo(1)),
+      updatedAt: stamp(daysAgo(1)),
+      name: "Kabelclips Schreibtisch",
+      quantity: 10,
+      printed: 4,
+      minutes: 12,
+      printerId: "printer-2",
+      filaments: [filament("print-2-f0", 1, "grau", 2.1)],
+      dueDate: "",
+      notes: "",
+      fileName: "Kabelclip.3mf",
+    },
+  ];
+  return { settings, customers, projects, prints };
 }
 
 export function demoData() {
@@ -189,9 +220,22 @@ export function demoData() {
 
 /** Legt die Beispieldaten in den Browser-Speicher der Vorschau. */
 export function loadDemo() {
-  const { settings, customers, projects } = build();
+  const { settings, customers, projects, prints } = build();
   const put = (c: string, list: { id: string }[]) => localStorage.setItem(`druckplaner:${c}`, JSON.stringify(Object.fromEntries(list.map((x) => [x.id, x]))));
   put("settings", [settings]);
   put("customers", customers);
   put("projects", projects);
+  put("prints", prints);
+  // Dateiliste für die Browser-Vorschau (Dateien selbst gibt es dort nicht)
+  const t = Date.now() - 86_400_000 * 11;
+  localStorage.setItem(
+    "druckplaner:files",
+    JSON.stringify({
+      "proj-10": [
+        { name: "Drache_gross_mehrfarbig.3mf", size: 4_812_330, modified: t },
+        { name: "Drache_klein.stl", size: 1_204_118, modified: t },
+        { name: "Farbwunsch.jpg", size: 214_870, modified: t },
+      ],
+    }),
+  );
 }

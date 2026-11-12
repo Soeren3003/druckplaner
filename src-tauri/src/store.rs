@@ -12,7 +12,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-const COLLECTIONS: &[&str] = &["customers", "projects", "settings"];
+const COLLECTIONS: &[&str] = &["customers", "projects", "settings", "prints"];
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

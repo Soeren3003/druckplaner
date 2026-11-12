@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultSettings, newProject } from "./defaults";
-import { buildQueue, rankPatches, setPrinted, statusAfterPrint } from "./queue";
+import { buildQueue, PRIVATE_PART, printAsProject, printFromProject, rankPatches, setPrinted, statusAfterPrint } from "./queue";
+import { newPrivatePrint } from "./defaults";
 import type { Project } from "./types";
 
 const settings = { ...defaultSettings(), printHoursPerDay: 10 };
@@ -76,5 +77,29 @@ describe("Druckwarteschlange", () => {
     const zurueck = setPrinted({ ...setPrinted(setPrinted(b, "b-0", 4), "b-1", 1) }, "b-1", 0);
     expect(zurueck.status).toBe("druck");
     expect(statusAfterPrint({ ...b, status: "geliefert" })).toBe("geliefert");
+  });
+
+  it("nimmt private Drucke ohne Auftrag auf und schreibt Änderungen in den Druck zurück", () => {
+    const privat = { ...newPrivatePrint(settings), id: "priv", name: "Ersatzknopf Spülmaschine", quantity: 2, minutes: 45, printerId: p2.id, dueDate: "2026-11-11", createdAt: "2026-11-05T08:00:00.000Z" };
+    const q = buildQueue([a, b], [], settings, { today: "2026-11-10" }, [privat]);
+    expect(q.open.map((e) => e.part.name)).toEqual(["Ersatzknopf Spülmaschine", "Clip", "Deckel", "Halter"]);
+    const e = q.open[0];
+    expect(e.private?.id).toBe("priv");
+    expect(e.customer).toBeUndefined();
+    expect(e.minutes).toBe(90);
+
+    // Abhaken und Verschieben laufen über den „Pseudo-Auftrag“ …
+    const gedruckt = printFromProject(privat, setPrinted(printAsProject(privat), PRIVATE_PART, 1));
+    expect(gedruckt.printed).toBe(1);
+    expect(printAsProject(gedruckt).status).toBe("druck");
+    const fertig = printFromProject(gedruckt, setPrinted(printAsProject(gedruckt), PRIVATE_PART, 2));
+    expect(printAsProject(fertig).status).toBe("fertig");
+    // … fertige private Drucke verschwinden aus der Liste, bleiben aber unter „Gedruckte“
+    expect(buildQueue([], [], settings, {}, [fertig]).open).toEqual([]);
+    expect(buildQueue([], [], settings, { includeDone: true }, [fertig]).done[0].private?.id).toBe("priv");
+    const patches = rankPatches(q.open, 0, 3);
+    const rang = patches.find((r) => r.projectId === "priv")!.rank;
+    const mitRang = printFromProject(privat, { ...printAsProject(privat), parts: [{ ...printAsProject(privat).parts[0], queueRank: rang }] });
+    expect(mitRang.queueRank).toBe(4);
   });
 });

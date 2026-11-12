@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api, type Collection } from "./api";
 import { defaultSettings, migrateProject, migrateSettings, now } from "./defaults";
 import { assignMissingNumbers } from "./numbering";
-import type { Customer, LocalConfig, Project, Settings, SyncReport } from "./types";
+import type { Customer, LocalConfig, PrivatePrint, Project, Settings, SyncReport } from "./types";
 
 type Entity = { id: string; updatedAt: string };
 
@@ -26,6 +26,9 @@ interface Store {
   deleteCustomer: (id: string) => Promise<void>;
   saveProject: (p: Project) => void;
   deleteProject: (id: string) => Promise<void>;
+  prints: PrivatePrint[];
+  savePrint: (p: PrivatePrint) => void;
+  deletePrint: (id: string) => Promise<void>;
   reload: () => Promise<void>;
   runSync: () => Promise<void>;
   setConfig: (c: LocalConfig) => void;
@@ -47,6 +50,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [prints, setPrints] = useState<PrivatePrint[]>([]);
   const [config, setConfig] = useState<LocalConfig | null>(null);
   const [sync, setSync] = useState<SyncStatus>({ running: false, last: null, error: "" });
   const [saveError, setSaveError] = useState("");
@@ -93,11 +97,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const reload = useCallback(async () => {
-    const [s, c, p] = await Promise.all([
+    const [s, c, p, pr] = await Promise.all([
       api.dbList<Settings>("settings"),
       api.dbList<Customer>("customers"),
       api.dbList<Project>("projects"),
+      api.dbList<PrivatePrint>("prints"),
     ]);
+    setPrints(pr.sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
     const stored = s.find((x) => x.id === "settings");
     if (stored) setSettings(migrateSettings(stored));
     else {
@@ -192,6 +198,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setProjects((l) => upsert(l, v));
         schedule("projects", v);
       },
+      prints,
+      savePrint: (p) => {
+        const v = { ...p, updatedAt: now() };
+        setPrints((l) => upsert(l, v));
+        schedule("prints", v);
+      },
+      deletePrint: async (id) => {
+        cancel(`prints/${id}`);
+        await api.dbDelete("prints", id);
+        await api.filesDeleteAll(id);
+        setPrints((l) => l.filter((x) => x.id !== id));
+      },
       deleteProject: async (id) => {
         const p = projects.find((x) => x.id === id);
         cancel(`projects/${id}`);
@@ -201,7 +219,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setProjects((l) => l.filter((x) => x.id !== id));
       },
     }),
-    [ready, settings, customers, projects, config, sync, saveError, reload, runSync, flush, schedule],
+    [ready, settings, customers, projects, prints, config, sync, saveError, reload, runSync, flush, schedule],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

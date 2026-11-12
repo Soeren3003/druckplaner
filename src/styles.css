@@ -1238,6 +1238,16 @@ table.queue tr.done td {
 .q-actions button {
   margin-left: 2px;
 }
+.q-part-link {
+  font-weight: 600;
+  text-align: left;
+}
+.slicer-icon {
+  color: var(--accent);
+}
+.private-filaments td {
+  padding: 3px 4px 3px 0;
+}
 .filament-dots {
   display: flex;
   flex-wrap: wrap;
@@ -1256,6 +1266,46 @@ table.queue tr.done td {
   background: repeating-linear-gradient(45deg, var(--muted), var(--muted) 2px, transparent 2px, transparent 4px);
   box-shadow: 0 0 0 1px var(--border);
   flex-shrink: 0;
+}
+
+/* ---------- Kontextmenü, Slicer ---------- */
+
+.context-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 220px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+.context-menu button {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+.context-menu button:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.context-menu button.danger:hover:not(:disabled) {
+  background: var(--danger);
+}
+.context-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+.slicer-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+  white-space: nowrap;
 }
 
 /* ---------- Dialog ---------- */

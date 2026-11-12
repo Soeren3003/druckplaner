@@ -189,6 +189,26 @@ export interface Project {
   invoices: InvoiceRecord[];
 }
 
+/** Privater Druck: nur für die Druckwarteschlange, ohne Auftrag, Kunde oder Rechnung. */
+export interface PrivatePrint {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  name: string;
+  quantity: number;
+  printed: number;
+  /** Druckzeit pro Stück in Minuten */
+  minutes: number;
+  printerId: string;
+  filaments: FilamentUse[];
+  /** optionaler Wunschtermin */
+  dueDate: string;
+  notes: string;
+  /** optionale Druckdatei, abgelegt unter files/<id>/ */
+  fileName: string;
+  queueRank?: number;
+}
+
 export interface FileMeta {
   name: string;
   size: number;
@@ -229,10 +249,14 @@ export interface SmtpConfig {
   copyToSelf: boolean;
 }
 
+export type SlicerKind = "bambu" | "orca" | "prusa";
+
 export interface LocalConfig {
   dataDir: string;
   webdav: WebdavConfig;
   smtp: SmtpConfig;
+  /** leer = Bambu Studio */
+  slicer: SlicerKind | "";
 }
 
 export interface SyncReport {

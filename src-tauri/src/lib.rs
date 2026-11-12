@@ -1,6 +1,7 @@
 mod config;
 mod mail;
 mod migrate;
+mod slicer;
 mod store;
 pub mod sync;
 mod threemf;
@@ -223,6 +224,28 @@ fn files_open(app: tauri::AppHandle, state: State<AppState>, project_id: String,
     app.opener().open_path(p.to_string_lossy(), None::<&str>).map_err(|e| e.to_string())
 }
 
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SlicerInfo {
+    name: &'static str,
+    available: bool,
+}
+
+/// Welcher Slicer ist eingestellt und ist er installiert?
+#[tauri::command]
+fn slicer_info(state: State<AppState>) -> SlicerInfo {
+    let s = slicer::Slicer::from_setting(&state.config.lock().unwrap().slicer);
+    SlicerInfo { name: s.label(), available: slicer::available(s) }
+}
+
+/// Öffnet eine Druckdatei (Auftrag oder privater Druck) im eingestellten Slicer.
+#[tauri::command]
+fn files_open_slicer(state: State<AppState>, project_id: String, name: String) -> R<()> {
+    let cfg = state.config.lock().unwrap().clone();
+    let p = store::project_file(&cfg.data_path(), &project_id, &name)?;
+    slicer::open(slicer::Slicer::from_setting(&cfg.slicer), &p)
+}
+
 #[tauri::command]
 fn files_reveal(app: tauri::AppHandle, state: State<AppState>, project_id: String, name: Option<String>) -> R<()> {
     let data = data_dir(&state);
@@ -345,6 +368,8 @@ pub fn run() {
             files_rename,
             files_open,
             files_reveal,
+            slicer_info,
+            files_open_slicer,
             threemf_info,
             invoice_save,
             invoice_open,

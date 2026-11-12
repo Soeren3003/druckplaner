@@ -32,6 +32,9 @@ oder einem anderen Gerät, als 3MF-Datei aus dem Internet oder als Antwort eines
   - Rechnungen werden nur als `.pdf` gespeichert.
   - Links öffnen nur, wenn sie mit `http(s)` beginnen.
   - Programme und Skripte unter den Druckdateien werden nicht direkt gestartet.
+- **Slicer:** Druckdateien werden nur an Bambu Studio, OrcaSlicer oder PrusaSlicer übergeben – als bekanntes
+  Programm an seinem üblichen Installationsort, ohne Shell und nur für Modelldateien (3MF, STL, STEP, OBJ, AMF).
+  Ein frei wählbarer Programmpfad ist bewusst nicht möglich.
 - **3MF-Dateien:** Aus dem Archiv werden nur einzelne, bekannte Einträge bis zu einer Höchstgröße gelesen.
   Nichts wird entpackt oder ausgeführt.
 - **Sync:**

@@ -9,7 +9,7 @@ async function call<T>(cmd: string, args: Record<string, unknown> = {}): Promise
   return invoke<T>(cmd, args);
 }
 
-export type Collection = "customers" | "projects" | "settings";
+export type Collection = "customers" | "projects" | "settings" | "prints";
 
 export const api = {
   getConfig: () => call<LocalConfig>("get_config"),
@@ -35,6 +35,10 @@ export const api = {
   filesRename: (projectId: string, name: string, newName: string) => call<void>("files_rename", { projectId, name, newName }),
   filesOpen: (projectId: string, name: string) => call<void>("files_open", { projectId, name }),
   filesReveal: (projectId: string, name?: string) => call<void>("files_reveal", { projectId, name }),
+  /** Eingestellter Slicer und ob er installiert ist */
+  slicerInfo: () => call<{ name: string; available: boolean }>("slicer_info"),
+  /** Datei eines Auftrags oder privaten Drucks im Slicer öffnen */
+  filesOpenSlicer: (projectId: string, name: string) => call<void>("files_open_slicer", { projectId, name }),
   threemfInfo: (projectId: string, name: string) => call<ThreeMfInfo>("threemf_info", { projectId, name }),
 
   invoiceSave: (name: string, bytes: Uint8Array) => call<string>("invoice_save", { name, bytes: Array.from(bytes) }),
@@ -99,7 +103,10 @@ function mock(cmd: string, args: Record<string, unknown>): unknown {
         dataDir: "(Browser-Vorschau)",
         webdav: { enabled: false, url: "", username: "", remoteFolder: "Druckplaner", autoSyncMinutes: 0 },
         smtp: { enabled: false, host: "", port: 0, security: "starttls", username: "", fromName: "", fromAddress: "", copyToSelf: false },
+        slicer: "bambu",
       };
+    case "slicer_info":
+      return { name: "Bambu Studio", available: true };
     case "db_list":
       return Object.values(read(args.collection));
     case "db_put": {
@@ -115,7 +122,10 @@ function mock(cmd: string, args: Record<string, unknown>): unknown {
       return;
     }
     case "files_list":
-      return [];
+      // Demo-Modus: erfundene Dateiliste je Auftrag
+      return JSON.parse(localStorage.getItem("druckplaner:files") || "{}")[args.projectId as string] ?? [];
+    case "threemf_info":
+      return { thumbnail: null, printer: "Bambu Lab A1 mini", filaments: [], plates: [] };
     case "mail_open":
       window.open(`mailto:${encodeURIComponent(String(args.to))}?subject=${encodeURIComponent(String(args.subject))}&body=${encodeURIComponent(String(args.body))}`);
       return;

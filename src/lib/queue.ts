@@ -1,11 +1,13 @@
 import { addDays, isoDate } from "./format";
-import type { Customer, PartLine, Project, Settings } from "./types";
+import type { Customer, PartLine, PrivatePrint, Project, Settings } from "./types";
 
 /** Aufträge in diesen Status kommen in die Druckwarteschlange. */
 export const QUEUE_STATUSES: Project["status"][] = ["auftrag", "druck"];
 
 export interface QueueEntry {
   key: string;
+  /** gesetzt bei privaten Drucken (ohne Auftrag) */
+  private?: PrivatePrint;
   project: Project;
   part: PartLine;
   customer?: Customer;
@@ -53,6 +55,55 @@ export function orderEntries(entries: QueueEntry[]) {
   return out;
 }
 
+/** Druckteil eines privaten Drucks (gleiche Kennung wie der Druck). */
+export const PRIVATE_PART = "druck";
+
+/**
+ * Ein privater Druck als Auftrag mit genau einem Druckteil – so laufen Reihenfolge, Zeitplan und
+ * Abhaken über dieselbe Logik. Gespeichert wird er weiterhin als eigener Datensatz (siehe printFromProject).
+ */
+export function printAsProject(p: PrivatePrint): Project {
+  const part: PartLine = {
+    id: PRIVATE_PART,
+    name: p.name,
+    quantity: p.quantity,
+    filaments: p.filaments,
+    minutes: p.minutes,
+    printerId: p.printerId,
+    fileName: p.fileName,
+    printed: p.printed,
+    queueRank: p.queueRank,
+  };
+  const printed = Math.min(p.printed, p.quantity);
+  return {
+    id: p.id,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+    number: "",
+    description: p.name,
+    title: "",
+    customTitle: false,
+    customerId: "",
+    status: p.quantity > 0 && printed >= p.quantity ? "fertig" : printed > 0 ? "druck" : "auftrag",
+    orderDate: p.createdAt.slice(0, 10),
+    dueDate: p.dueDate,
+    notes: p.notes,
+    parts: [part],
+    work: [],
+    packaging: 0,
+    shipping: 0,
+    discount: 0,
+    electricityPrice: null,
+    invoices: [],
+  };
+}
+
+/** Änderungen aus der Warteschlange (gedruckt, Position) zurück in den privaten Druck übernehmen. */
+export function printFromProject(p: PrivatePrint, project: Project): PrivatePrint {
+  const part = project.parts.find((x) => x.id === PRIVATE_PART);
+  return part ? { ...p, printed: part.printed ?? 0, queueRank: part.queueRank } : p;
+}
+
 export interface QueueOptions {
   /** nur ein Drucker, leer = alle */
   printerId?: string;
@@ -61,11 +112,12 @@ export interface QueueOptions {
   today?: string;
 }
 
-export function buildQueue(projects: Project[], customers: Customer[], settings: Settings, opts: QueueOptions = {}) {
+export function buildQueue(projects: Project[], customers: Customer[], settings: Settings, opts: QueueOptions = {}, prints: PrivatePrint[] = []) {
   const today = opts.today ?? isoDate(new Date());
   const hoursPerDay = settings.printHoursPerDay > 0 ? settings.printHoursPerDay : 8;
   const all: QueueEntry[] = [];
-  for (const project of projects) {
+  const privateById = new Map(prints.map((p) => [p.id, p]));
+  for (const project of [...projects, ...prints.map(printAsProject)]) {
     // Fertige Aufträge nur mit ihren gedruckten Teilen, damit sich versehentliches Abhaken zurücknehmen lässt
     const finished = project.status === "fertig";
     if (!QUEUE_STATUSES.includes(project.status) && !(finished && opts.includeDone)) continue;
@@ -76,6 +128,7 @@ export function buildQueue(projects: Project[], customers: Customer[], settings:
       if (finished && remaining > 0) continue;
       all.push({
         key: `${project.id}/${part.id}`,
+        private: privateById.get(project.id),
         project,
         part,
         customer: customers.find((c) => c.id === project.customerId),

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { ContextMenu } from "../../components/ContextMenu";
 import { Empty, Field, Modal } from "../../components/ui";
+import { isModelFile, useSlicer } from "../../lib/slicer";
 import { api, confirmDialog, inTauri, onFileDrop, pickFiles } from "../../lib/api";
 import { partsFromThreeMf } from "../../lib/threemf";
 import { bytes, dateTime, duration, num } from "../../lib/format";
@@ -15,6 +17,11 @@ export default function FilesTab({ project, update }: { project: Project; update
   const [hover, setHover] = useState(false);
   const [error, setError] = useState("");
   const [renaming, setRenaming] = useState<{ from: string; to: string } | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number; name: string } | null>(null);
+  const slicer = useSlicer();
+  const slicerHint = slicer.available ? `Im Slicer ${slicer.name} öffnen` : `${slicer.name} wurde auf diesem Rechner nicht gefunden (Einstellungen → Drucker & Strom)`;
+
+  const openInSlicer = (name: string) => api.filesOpenSlicer(project.id, name).catch((e) => setError(String(e)));
 
   const load = useCallback(async () => {
     const list = await api.filesList(project.id);
@@ -100,7 +107,13 @@ export default function FilesTab({ project, update }: { project: Project; update
           {files.map((f) => {
             const i = info[f.name];
             return (
-              <li key={f.name}>
+              <li
+                key={f.name}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setMenu({ x: e.clientX, y: e.clientY, name: f.name });
+                }}
+              >
                 <div className="thumb">{i?.thumbnail ? <img src={i.thumbnail} alt="" /> : <span>{f.name.split(".").pop()?.toUpperCase()}</span>}</div>
                 <div className="file-main">
                   <button className="link file-name" onClick={() => api.filesOpen(project.id, f.name)} title="Mit Standardprogramm öffnen">
@@ -128,6 +141,11 @@ export default function FilesTab({ project, update }: { project: Project; update
                   )}
                 </div>
                 <div className="file-actions">
+                  {isModelFile(f.name) && (
+                    <button className="small slicer-btn" onClick={() => openInSlicer(f.name)} disabled={!slicer.available} title={slicerHint}>
+                      ▶ {slicer.name}
+                    </button>
+                  )}
                   <button className="ghost small" onClick={() => api.filesReveal(project.id, f.name)}>
                     Zeigen
                   </button>
@@ -142,6 +160,23 @@ export default function FilesTab({ project, update }: { project: Project; update
             );
           })}
         </ul>
+      )}
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          onClose={() => setMenu(null)}
+          items={[
+            { label: "Öffnen", onClick: () => api.filesOpen(project.id, menu.name).catch((e) => setError(String(e))) },
+            ...(isModelFile(menu.name)
+              ? [{ label: `In ${slicer.name} öffnen`, onClick: () => openInSlicer(menu.name), disabled: !slicer.available, title: slicerHint }]
+              : []),
+            { label: "Im Ordner zeigen", onClick: () => api.filesReveal(project.id, menu.name) },
+            "sep",
+            { label: "Umbenennen …", onClick: () => setRenaming({ from: menu.name, to: menu.name }) },
+            { label: "Löschen …", danger: true, onClick: () => remove(menu.name) },
+          ]}
+        />
       )}
       {renaming && (
         <Modal

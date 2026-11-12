@@ -92,6 +92,10 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 - Bei **Bambu-Studio- und OrcaSlicer-3MF-Dateien** zeigt der Druckplaner das Vorschaubild an. Wurde die Datei nach
   dem Slicen gespeichert, liest er **Druckzeit und Verbrauch je Platte** aus und übernimmt sie auf Knopfdruck als
   Druckteile. Bei mehrfarbigen Platten wird **jedes Filament mit Typ, Farbe und Gewicht** einzeln übernommen.
+- **Direkt im Slicer öffnen:** 3MF-, STL-, STEP-, OBJ- und AMF-Dateien haben einen Knopf **▶ Bambu Studio**, und
+  ein **Rechtsklick** auf eine Datei öffnet ein Menü mit *Öffnen*, *In Bambu Studio öffnen*, *Im Ordner zeigen*,
+  *Umbenennen* und *Löschen*. Statt Bambu Studio lassen sich OrcaSlicer oder PrusaSlicer einstellen
+  (*Einstellungen → Drucker & Strom*, je Rechner).
 
 ### Angebote und Rechnungen
 
@@ -119,6 +123,12 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 - **Abhaken:** „+1“ für ein gedrucktes Stück, „✓ fertig“ für alle, ↶ zum Zurücknehmen. Mit dem ersten Stück springt
   der Auftrag auf „Im Druck“, wenn alles gedruckt ist auf „Fertig“.
 - Filter nach Drucker; die Zahl offener Teile steht in der Seitenleiste.
+- **Private Drucke:** Über **+ Privater Druck** kommen eigene Drucke in die Warteschlange, **ohne dass ein Auftrag
+  angelegt werden muss**: Bezeichnung, Anzahl, Druckzeit, Drucker, Filamente (auch mehrfarbig), optionaler
+  Wunschtermin, Notiz und optional eine Druckdatei. Aus geslicten 3MF-Dateien werden Druckzeit und Filamente
+  übernommen. Private Drucke tauchen nicht bei Aufträgen, Kunden oder Umsätzen auf, werden aber geplant, abgehakt
+  und synchronisiert wie alle anderen Einträge.
+- Hat ein Eintrag eine Druckdatei, öffnet **▶** sie direkt im Slicer.
 
 ### Kunden
 
@@ -142,9 +152,11 @@ Der Druckplaner ist für Privatleute und Kleingewerbe gedacht, nicht als Buchhal
 
 ## Screenshots
 
-| Druckwarteschlange | Rechnung per E-Mail |
+| Druckwarteschlange | Privater Druck ohne Auftrag |
 | --- | --- |
-| <img src="docs/screenshots/queue.jpg" alt="Druckwarteschlange: offene Druckteile nach Termin, Drucker, offene Stück, Druckzeit, voraussichtlich fertig mit Warnung" width="440"> | <img src="docs/screenshots/mail.jpg" alt="E-Mail-Dialog mit Empfänger, Betreff, Text aus der Vorlage und PDF-Anhang" width="440"> |
+| <img src="docs/screenshots/queue.jpg" alt="Druckwarteschlange mit Aufträgen und privaten Drucken, Terminen, Druckzeit und voraussichtlichem Ende" width="440"> | <img src="docs/screenshots/private.jpg" alt="Dialog für einen privaten Druck mit Anzahl, Druckzeit, Drucker, Filament und Notiz" width="440"> |
+| **Druckdateien mit Kontextmenü** | **Rechnung per E-Mail** |
+| <img src="docs/screenshots/files.jpg" alt="Dateiliste eines Auftrags mit Knopf und Rechtsklick-Menü zum Öffnen in Bambu Studio" width="440"> | <img src="docs/screenshots/mail.jpg" alt="E-Mail-Dialog mit Empfänger, Betreff, Text aus der Vorlage und PDF-Anhang" width="440"> |
 | **Auftrag mit mehrfarbigem Druckteil** | **Angebote und Rechnungen** |
 | <img src="docs/screenshots/project.jpg" alt="Auftrag: mehrfarbiges Druckteil mit drei Filamenten, Rollenpreise je Filament, Zusammenfassung" width="440"> | <img src="docs/screenshots/documents.jpg" alt="Auftrag: Liste der Angebote und Rechnungen mit Bezahlt- und Versandstatus" width="440"> |
 | **Aufträge** | **Kunden** |
@@ -302,7 +314,8 @@ Alles liegt als einfache Dateien im Datenordner:
 db/customers/<id>.json      Kunden
 db/projects/<id>.json       Aufträge (mit Kalkulation und Liste der Angebote/Rechnungen)
 db/settings/settings.json   Einstellungen (Absender, Steuer, Drucker, Filamente …)
-files/<auftrag-id>/…        Druckdateien und Anhänge
+db/prints/<id>.json         private Drucke (nur Druckwarteschlange)
+files/<auftrag-id>/…        Druckdateien und Anhänge (bei privaten Drucken: files/<druck-id>/)
 invoices/*.pdf              erzeugte Angebote und Rechnungen
 conflicts/                  (nur lokal) ältere Version bei Sync-Konflikten
 .sync-state.json            (nur lokal) Stand des letzten Abgleichs
@@ -348,8 +361,18 @@ Weitere Befehle:
 
 ```bash
 npm run licenses              # THIRD_PARTY_LICENSES.md und Lizenzliste der App neu erzeugen
-npm run set-version -- 1.1.0  # Versionsnummer überall setzen
+npm run set-version -- 1.4.0  # Versionsnummer überall setzen
 ```
+
+**Vor einem Commit:** prüfen, ob Werte aus dem eigenen Datenordner (Kunden, Aufträge, private Drucke, Absender,
+Dateinamen) im Repository oder in der Git-Historie stehen:
+
+```bash
+python3 -I scripts/check-private-data.py "~/Library/Application Support/de.soeren3003.druckplaner/data" .
+```
+
+**Screenshots** für diese README entstehen im Demo-Modus mit `scripts/screenshots/` (Anleitung im Kopf von
+`server.py`).
 
 ## Projektstruktur
 
@@ -366,6 +389,7 @@ src/                          Oberfläche (React + TypeScript)
   lib/queue.ts                Druckwarteschlange: Reihenfolge, Zeitplan je Drucker, Status beim Abhaken
   lib/mailtext.ts             E-Mail-Vorlagen mit Platzhaltern
   lib/threemf.ts              Druckteile aus 3MF-Daten, Farbnamen
+  lib/slicer.ts               Modelldateien erkennen, eingestellter Slicer
   lib/demo.ts                 erfundene Beispieldaten
 src-tauri/                    Desktop-Hülle (Rust, Tauri 2)
   src/lib.rs                  Befehle für die Oberfläche
@@ -373,6 +397,7 @@ src-tauri/                    Desktop-Hülle (Rust, Tauri 2)
   src/sync.rs                 Zwei-Wege-Abgleich mit Konfliktbehandlung
   src/webdav.rs               WebDAV-Client
   src/mail.rs                 E-Mail-Versand über SMTP (lettre) und mailto-Links
+  src/slicer.rs               Druckdateien in Bambu Studio, OrcaSlicer oder PrusaSlicer öffnen
   src/threemf.rs              Vorschaubild, Gewicht und Druckzeit aus 3MF-Dateien
   src/config.rs               lokale Einstellungen und Schlüsselbund
   src/migrate.rs              Übernahme der Daten nach einer Änderung der App-Kennung
@@ -432,6 +457,7 @@ Das Sicherheitskonzept und der Weg zum Melden von Lücken stehen in **[SECURITY.
   eingesetzt.
 - **Geprüfte Befehle:** Was die Oberfläche anstoßen kann, ist eng begrenzt (Dateinamen, Dateitypen, Links).
   Programme und Skripte werden nicht direkt geöffnet, Sync-Pfade können den Datenordner nicht verlassen.
+  Der Slicer wird ohne Shell gestartet, nur für Modelldateien und nur als eines der bekannten Programme.
 - **3MF-Dateien** werden nur gelesen, nie entpackt, und nur bis zu einer Höchstgröße.
 - **Abhängigkeiten ohne bekannte Lücken** (`npm audit`, `cargo audit`):
 

@@ -55,7 +55,7 @@ export default function App() {
   };
 
   const active = view.page === "project" ? "projects" : view.page;
-  const queueCount = buildQueue(store.projects, store.customers, store.settings).open.length;
+  const queueCount = buildQueue(store.projects, store.customers, store.settings, {}, store.prints).open.length;
   const { sync, config } = store;
 
   return (

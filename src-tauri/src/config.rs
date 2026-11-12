@@ -80,6 +80,9 @@ pub struct LocalConfig {
     pub data_dir: String,
     pub webdav: WebdavConfig,
     pub smtp: SmtpConfig,
+    /// Slicer zum Öffnen von Druckdateien: „bambu“ (Standard), „orca“ oder „prusa“. Je Rechner, da Programme
+    /// unterschiedlich installiert sein können.
+    pub slicer: String,
 }
 
 impl LocalConfig {

@@ -8,6 +8,33 @@ Die Versionsnummern folgen der [semantischen Versionierung](https://semver.org/l
 - **MINOR** steigt bei neuen Funktionen, die bestehende Daten weiter lesen können.
 - **PATCH** steigt bei Fehlerbehebungen und kleinen Verbesserungen ohne neue Funktion.
 
+## [1.3.0] – 2026-11-12
+
+Slicer-Anbindung und private Drucke.
+
+### Neu
+- **Druckdateien direkt in Bambu Studio öffnen:**
+  - Knopf **▶ Bambu Studio** bei 3MF-, STL-, STEP-, OBJ- und AMF-Dateien eines Auftrags.
+  - **Rechtsklick-Menü** auf jede Datei: Öffnen, In Bambu Studio öffnen, Im Ordner zeigen, Umbenennen, Löschen.
+  - In der Druckwarteschlange öffnet **▶** die Druckdatei eines Eintrags.
+  - *Einstellungen → Drucker & Strom → Slicer:* Bambu Studio (Standard), OrcaSlicer oder PrusaSlicer, je Rechner;
+    die App zeigt an, ob das Programm gefunden wurde.
+- **Private Drucke in der Druckwarteschlange:** Eigene Drucke lassen sich mit **+ Privater Druck** einreihen,
+  ohne dafür einen Auftrag anzulegen.
+  - Erfasst werden Bezeichnung, Anzahl, Druckzeit, Drucker, Filamente (auch mehrfarbig), Wunschtermin, Notiz und
+    optional eine Druckdatei. Aus geslicten 3MF-Dateien kommen Druckzeit und Filamente automatisch.
+  - Planung, Reihenfolge, Abhaken und Sync wie bei Aufträgen. In Aufträgen, Kundenlisten und Umsätzen erscheinen
+    sie nicht.
+  - Bearbeiten durch Klick auf den Namen, Löschen samt Druckdatei im Dialog.
+
+### Entwicklung
+- `scripts/check-private-data.py` prüft vor einem Commit, ob Werte aus dem eigenen Datenordner im Repository oder
+  in der Git-Historie stehen.
+- `scripts/screenshots/` enthält die Werkzeuge für die README-Screenshots im Demo-Modus.
+
+### Sicherheit
+- Der Slicer wird ohne Shell gestartet, nur als bekanntes Programm und nur für Modelldateien (mit Tests).
+
 ## [1.2.0] – 2026-11-09
 
 E-Mail-Versand und Druckwarteschlange.

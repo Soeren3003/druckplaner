@@ -1,7 +1,7 @@
 {
   "name": "druckplaner",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Projekt- und Kostenplanung für 3D-Druckaufträge: Kalkulation, Kunden, Druckdateien und Rechnungen",
   "license": "MIT",
   "author": "Soeren3003",

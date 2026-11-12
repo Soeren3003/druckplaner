@@ -1,6 +1,6 @@
 import { isoDate } from "./format";
 import { nextCustomerNumber, nextProjectNumber } from "./numbering";
-import type { Customer, FilamentUse, PartLine, Project, Settings, WorkLine } from "./types";
+import type { Customer, FilamentUse, PartLine, PrivatePrint, Project, Settings, WorkLine } from "./types";
 
 export const uid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
@@ -123,6 +123,24 @@ export function newPart(settings: Settings): PartLine {
 
 export function newWork(name = "", unit = "h", unitPrice = 0): WorkLine {
   return { id: uid(), name, quantity: 1, unit, unitPrice };
+}
+
+export function newPrivatePrint(settings: Settings): PrivatePrint {
+  const t = now();
+  return {
+    id: uid(),
+    createdAt: t,
+    updatedAt: t,
+    name: "",
+    quantity: 1,
+    printed: 0,
+    minutes: 0,
+    printerId: settings.defaultPrinterId || settings.printers[0]?.id || "",
+    filaments: [newFilament(settings)],
+    dueDate: "",
+    notes: "",
+    fileName: "",
+  };
 }
 
 export function newProject(settings: Settings, customerId = "", existingNumbers: string[] = []): Project {
